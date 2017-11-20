@@ -115,7 +115,7 @@ public class CustomSurfaceView extends SurfaceView implements SurfaceHolder.Call
                 int angle = random.nextInt() % 360;
                 int picWidth = mPictures.get(i).getWidth();
                 int picHeight = mPictures.get(i).getHeight();
-                float scaleFactor = surfaceWidth / (picWidth * (1 - overlapFactor) * mPictures.size());
+                float scaleFactor = surfaceWidth / (picWidth * ((1 - overlapFactor / 2) * (mPictures.size() - 1) + (1 - overlapFactor)));
                 float overlap = picWidth * scaleFactor * overlapFactor / 2  ;
                 offset -= overlap;
                 Matrix matrix = new Matrix();
