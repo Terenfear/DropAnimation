@@ -13,6 +13,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
@@ -29,8 +30,8 @@ import java.util.Random;
  * ======================================================================================================================
  */
 public class CustomSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
-    private DrawThread drawThread;
     private final static String TAG = "CustomSurfaceView";
+    private DrawThread drawThread;
 
     public CustomSurfaceView(Context context) {
         super(context);
@@ -82,48 +83,68 @@ public class CustomSurfaceView extends SurfaceView implements SurfaceHolder.Call
     }
 
     class DrawThread extends Thread {
+        private final SurfaceHolder mSurfaceHolder;
         private boolean mRunFlag = false;
         private boolean mRecalc = false;
-        private final SurfaceHolder mSurfaceHolder;
-        private List<Bitmap> mPictures;
-        private List<Matrix> mMatrices;
+        private List<List<Bitmap>> mPictures;
+        private List<List<Matrix>> mMatrices;
         private long mPrevTime;
+        private HashMap<Integer, Integer> mRes = new HashMap<>();
 
-        public DrawThread(SurfaceHolder surfaceHolder, Resources resources){
+        public DrawThread(SurfaceHolder surfaceHolder, Resources resources) {
             this.mSurfaceHolder = surfaceHolder;
 
+            mRes.put(0, R.drawable.ic_drop_1);
+            mRes.put(1, R.drawable.ic_drop_2);
+            mRes.put(2, R.drawable.ic_drop_3);
+            mRes.put(3, R.drawable.ic_drop_4);
+            mRes.put(4, R.drawable.ic_drop_5);
+            mRes.put(5, R.drawable.ic_drop_6);
+            mRes.put(6, R.drawable.ic_drop_7);
+
+            float surfaceWidth = surfaceHolder.getSurfaceFrame().width();
+            float surfaceHeight = surfaceHolder.getSurfaceFrame().height();
+            Bitmap testBitmap = BitmapFactory.decodeResource(resources, mRes.get(0));
+            float overlapFactor = 0.75f;
+            int rowLength = mRes.size();
+            Random random = new Random();
+            float scaleFactor = surfaceWidth / (testBitmap.getWidth() * ((1 - overlapFactor / 2) * (rowLength - 1) + (1 - overlapFactor)));
+            int rowNumber = Math.round(surfaceHeight / (testBitmap.getHeight() * scaleFactor * (1 - overlapFactor)));
+
             mPictures = new ArrayList<>();
-            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_1));
-            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_1));
-            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_1));
-            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_1));
-            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_1));
-            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_1));
-            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_1));
-//            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_2));
-//            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_3));
-//            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_4));
-//            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_5));
-//            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_6));
-//            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_7));
+            for (int i = 0; i < rowNumber; i++) {
+                List<Bitmap> row = new ArrayList<>();
+                for (int j = 0; j < rowLength; j++) {
+                    int imageId = random.nextInt(mRes.size());
+                    row.add(BitmapFactory.decodeResource(resources, mRes.get(imageId)));
+                }
+                mPictures.add(row);
+            }
 
             mMatrices = new ArrayList<>();
-            float surfaceWidth = surfaceHolder.getSurfaceFrame().width();
-            Random random = new Random();
-            float overlapFactor = 0.5f;
-            for (int i = 0, offset = 0; i < mPictures.size(); i++) {
-                int angle = random.nextInt() % 360;
-                int picWidth = mPictures.get(i).getWidth();
-                int picHeight = mPictures.get(i).getHeight();
-                float scaleFactor = surfaceWidth / (picWidth * ((1 - overlapFactor / 2) * (mPictures.size() - 1) + (1 - overlapFactor)));
-                float overlap = picWidth * scaleFactor * overlapFactor / 2  ;
-                offset -= overlap;
-                Matrix matrix = new Matrix();
-//                matrix.preRotate(angle, picWidth / 2, picHeight / 2);
-                matrix.postScale(scaleFactor, scaleFactor);
-                matrix.postTranslate(offset, -picHeight * scaleFactor);
-                offset += picWidth * scaleFactor;
-                mMatrices.add(matrix);
+            for (int rowId = 0, offsetY = 0; rowId < mPictures.size(); rowId++) {
+                List<Bitmap> row = mPictures.get(rowId);
+                List<Matrix> rowMatrices = new ArrayList<>();
+                for (int picId = 0, offsetX = 0; picId < row.size(); picId++) {
+                    int angle = random.nextInt() % 360;
+                    int picWidth = row.get(picId).getWidth();
+                    int picHeight = row.get(picId).getHeight();
+                    float overlap = picWidth * scaleFactor * overlapFactor / 2;
+                    offsetX -= overlap;
+                    if (picId == 0) {
+                        offsetY += overlap;
+                    }
+                    Matrix matrix = new Matrix();
+                    matrix.preRotate(angle, picWidth / 2, picHeight / 2);
+                    matrix.postScale(scaleFactor, scaleFactor);
+                    matrix.postTranslate(offsetX, offsetY - picHeight * scaleFactor + (random.nextInt() % 30));
+                    offsetX += picWidth * scaleFactor;
+                    if (picId == row.size() - 1) {
+                        offsetY -= picHeight * scaleFactor;
+                    }
+                    rowMatrices.add(matrix);
+                }
+                mMatrices.add(rowMatrices);
             }
             mPrevTime = System.currentTimeMillis();
         }
@@ -136,16 +157,21 @@ public class CustomSurfaceView extends SurfaceView implements SurfaceHolder.Call
             mRecalc = recalc;
         }
 
-        private void transform(Bitmap picture,
-                               Matrix matrix,
-                               int surfaceHeight,
-                               float pixelsPerFrame,
-                               float[] values) {
-            matrix.getValues(values);
+        private int transform(Bitmap picture,
+                              Matrix matrix,
+                              int traveledPath,
+                              float surfaceHeight,
+                              float pixelsPerFrame,
+                              float[] values) {
+
+//            matrix.getValues(values);
 //                    Log.d(TAG, "run: " + values[2] + ";" + values[5]);
-            if (values[5] < surfaceHeight - picture.getHeight() * values[4]) {
+//            if (values[5] < surfaceHeight - picture.getHeight() * values[4]) {
+            if (traveledPath < surfaceHeight) {
                 matrix.postTranslate(0, pixelsPerFrame);
+                traveledPath += pixelsPerFrame;
             }
+            return traveledPath;
         }
 
         @Override
@@ -153,28 +179,57 @@ public class CustomSurfaceView extends SurfaceView implements SurfaceHolder.Call
             Canvas canvas;
             int framesPerSecond = 50;
             int frameLength = 1000 / 50;
-            int surfaceHeight = mSurfaceHolder.getSurfaceFrame().height();
-            float pixelsPerFrame = surfaceHeight / framesPerSecond;
+            float surfaceHeight = mSurfaceHolder.getSurfaceFrame().height();
+            List<Float> speeds = new ArrayList<>();
+            for (int i = 0; i < mPictures.size(); i++) {
+                speeds.add(surfaceHeight / framesPerSecond);
+            }
+            List<List<Integer>> paths = new ArrayList<>();
+            for (List<Bitmap> row : mPictures) {
+                List<Integer> pathRow = new ArrayList<>();
+                for (Bitmap bitmap : row) {
+                    pathRow.add(0);
+                }
+                paths.add(pathRow);
+            }
             float values[] = new float[9];
+            int framesTillLastRow = 0;
+            int rowsOnScreen = 1;
             while (mRunFlag) {
                 if (mRecalc) {
                     surfaceHeight = mSurfaceHolder.getSurfaceFrame().height();
-                    pixelsPerFrame = surfaceHeight / framesPerSecond;
+                    speeds.clear();
+                    for (int i = 0; i < mPictures.size(); i++) {
+                        speeds.add(surfaceHeight / framesPerSecond);
+                    }
                     mRecalc = false;
                 }
                 long now = System.currentTimeMillis();
                 long elapsedTime = now - mPrevTime;
-                if (elapsedTime > frameLength){
-                    mPrevTime = now;
-                    for (int i = 0; i < mPictures.size(); i++) {
-                        transform(mPictures.get(i),
-                                mMatrices.get(i),
-                                surfaceHeight,
-                                pixelsPerFrame,
-                                values);
+                if (elapsedTime > frameLength) {
+                    framesTillLastRow++;
+                    if (framesTillLastRow > framesPerSecond * 0.2 && rowsOnScreen < mPictures.size()) {
+                        rowsOnScreen++;
+                        framesTillLastRow = 0;
                     }
-                    if (pixelsPerFrame < surfaceHeight / 20) {
-                        pixelsPerFrame *= 1.025;
+                    mPrevTime = now;
+                    for (int i = 0; i < rowsOnScreen; i++) {
+                        List<Bitmap> rowImages = mPictures.get(i);
+                        List<Matrix> rowMatrices = mMatrices.get(i);
+                        List<Integer> rowPaths = paths.get(i);
+                        float pixelsPerFrame = speeds.get(i);
+                        for (int j = 0; j < rowImages.size(); j++) {
+                            rowPaths.set(j, transform(rowImages.get(j),
+                                    rowMatrices.get(j),
+                                    rowPaths.get(j),
+                                    surfaceHeight,
+                                    pixelsPerFrame,
+                                    values));
+                        }
+                        if (pixelsPerFrame < surfaceHeight / 20) {
+                            pixelsPerFrame *= 1.025;
+                            speeds.set(i, pixelsPerFrame);
+                        }
                     }
                 }
                 canvas = null;
@@ -185,9 +240,13 @@ public class CustomSurfaceView extends SurfaceView implements SurfaceHolder.Call
                         if (canvas != null) {
                             canvas.drawColor(Color.WHITE);
                             for (int i = 0; i < mPictures.size(); i++) {
-                                canvas.drawBitmap(mPictures.get(i),
-                                        mMatrices.get(i),
-                                        null);
+                                List<Bitmap> rowImages = mPictures.get(i);
+                                List<Matrix> rowMatrices = mMatrices.get(i);
+                                for (int j = 0; j < rowImages.size(); j++) {
+                                    canvas.drawBitmap(rowImages.get(j),
+                                            rowMatrices.get(j),
+                                            null);
+                                }
                             }
                         } else {
                             mRunFlag = false;
