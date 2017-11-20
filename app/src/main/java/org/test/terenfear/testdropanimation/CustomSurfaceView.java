@@ -94,24 +94,32 @@ public class CustomSurfaceView extends SurfaceView implements SurfaceHolder.Call
 
             mPictures = new ArrayList<>();
             mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_1));
-            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_2));
-            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_3));
-            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_4));
-            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_5));
-            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_6));
-            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_7));
+            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_1));
+            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_1));
+            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_1));
+            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_1));
+            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_1));
+            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_1));
+//            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_2));
+//            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_3));
+//            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_4));
+//            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_5));
+//            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_6));
+//            mPictures.add(BitmapFactory.decodeResource(resources, R.drawable.ic_drop_7));
 
             mMatrices = new ArrayList<>();
             float surfaceWidth = surfaceHolder.getSurfaceFrame().width();
             Random random = new Random();
-            int angle = 0;
+            float overlapFactor = 0.5f;
             for (int i = 0, offset = 0; i < mPictures.size(); i++) {
-                angle = random.nextInt() % 360;
+                int angle = random.nextInt() % 360;
                 int picWidth = mPictures.get(i).getWidth();
                 int picHeight = mPictures.get(i).getHeight();
-                float scaleFactor = surfaceWidth / (picWidth * mPictures.size());
+                float scaleFactor = surfaceWidth / (picWidth * (1 - overlapFactor) * mPictures.size());
+                float overlap = picWidth * scaleFactor * overlapFactor / 2  ;
+                offset -= overlap;
                 Matrix matrix = new Matrix();
-                matrix.preRotate(angle, picWidth / 2, picHeight / 2);
+//                matrix.preRotate(angle, picWidth / 2, picHeight / 2);
                 matrix.postScale(scaleFactor, scaleFactor);
                 matrix.postTranslate(offset, -picHeight * scaleFactor);
                 offset += picWidth * scaleFactor;
@@ -135,7 +143,7 @@ public class CustomSurfaceView extends SurfaceView implements SurfaceHolder.Call
                                float[] values) {
             matrix.getValues(values);
 //                    Log.d(TAG, "run: " + values[2] + ";" + values[5]);
-            if (values[5] < surfaceHeight) {
+            if (values[5] < surfaceHeight - picture.getHeight() * values[4]) {
                 matrix.postTranslate(0, pixelsPerFrame);
             }
         }
