@@ -15,13 +15,15 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 
 import org.intellij.lang.annotations.Language;
-import org.test.terenfear.testdropanimation.R;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -103,11 +105,46 @@ public class TestActivity extends AppCompatActivity
     private float[] viewMatrix = new float[16];
     private float[] rotationMatrix = new float[16];
     private float[] translationMatrix = new float[16];
+    private float[] scaleMatrix = new float[16];
     private float[] scratch = new float[16];
     private float[] repeat = new float[16];
+    private float[] temp = new float[16];
+    private List<DrawObject> mDrawObjectList;
     private Bitmap mBitmap1;
     private Bitmap mBitmap2;
+    private long maxTime = 5000L;
+    private long traveledTime;
+    private float maxDistance = 2f;
+    private float traveledDistance;
+    private float tempTravDist = 0;
+    private float acceleration = 0;
+    private int numCols = 10;
+    private int numRows;
+    private float objWH;
     // endregion Variables
+
+    private float calcObjectWidthHeight(int width, int height, int numItems) {
+        float ratio = (float) width / height;
+        if (ratio < 1) {
+            ratio = 1 / ratio;
+        }
+        float numInPlane = numItems / ratio;
+        return (float) 2 / numInPlane;
+    }
+
+    private FloatBuffer createFBO(float objWH) {
+        float half = objWH / 2;
+        float[] posMatrix = {
+               -half, -half, 1,  // X1,Y1,Z1
+                half, -half, 1,  // X2,Y2,Z2
+               -half,  half, 1,  // X3,Y3,Z3
+                half,  half, 1   // X4,Y4,Z4
+        };
+        return ByteBuffer.allocateDirect(posMatrix.length * 4)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer()
+                .put(posMatrix);
+    }
 
     // region LifeCycle
     @Override
@@ -116,10 +153,6 @@ public class TestActivity extends AppCompatActivity
         setContentView(R.layout.activity_test);
 
         detector = new ScaleGestureDetector(this, this);
-
-        Matrix.setIdentityM(translationMatrix, 0);
-        Matrix.setIdentityM(repeat, 0);
-        Matrix.translateM(repeat, 0, 0.5f, 0, 0);
 
         view = (GLSurfaceView) findViewById(R.id.surface);
 //        view.setOnTouchListener(this);
@@ -147,12 +180,49 @@ public class TestActivity extends AppCompatActivity
     // region GLSurfaceView.Renderer
     @Override
     public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
+
+        traveledTime = 0;
+        traveledDistance = 0;
+        acceleration = (float) (2 * maxDistance / Math.pow(maxTime, 2));
+        scale = 1f;
+
+        Matrix.setIdentityM(translationMatrix, 0);
+
+        int width = getWindow().getDecorView().getWidth();
+        int height = getWindow().getDecorView().getHeight();
+        objWH = calcObjectWidthHeight(width, height, numCols);
+        positionBuffer1 = createFBO(objWH);
+
+        mDrawObjectList = new ArrayList<>();
+        List<Float> bonusDistances = new ArrayList<>();
+        for (int i = 0; i < numCols; i++) {
+            bonusDistances.add((float) ThreadLocalRandom.current().nextDouble(0, objWH));
+        }
+        float offsetY;
+        float bonusDist;
+        numRows = Math.round(2 / objWH) + 1;
+        for (int i = 0; i < numRows; i++) {
+            offsetY = objWH * i;
+            for (int j = 0; j < numCols; j++) {
+                bonusDist = bonusDistances.get(j);
+                bonusDist += (float) ThreadLocalRandom.current().nextDouble(0, objWH);
+                mDrawObjectList.add(new DrawObject(objWH, offsetY, bonusDist));
+                bonusDistances.set(j, bonusDist);
+            }
+        }
+
+        Matrix.setIdentityM(repeat, 0);
+        Matrix.translateM(repeat, 0, objWH, 0, 0);
+
+        Matrix.setIdentityM(scaleMatrix, 0);
+        Matrix.scaleM(scaleMatrix, 0, scale, scale, 1);
+
         // A little bit of initialization
-        GLES20.glClearColor(0f, 0f, 0f, 0f);
+        GLES20.glClearColor(1f, 1f, 1f, 0f);
         Matrix.setRotateM(rotationMatrix, 0, 0, 0, 0, 1.0f);
 
         // First, we load the picture into a texture that OpenGL will be able to use
-        mBitmap1 = loadBitmapFromAssets(3);
+        mBitmap1 = BitmapFactory.decodeResource(getResources(), R.drawable.ic_drop_1);
         mBitmap2 = loadBitmapFromAssets(2);
         int texture = createFBOTexture(mBitmap1.getWidth(), mBitmap1.getHeight());
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture);
@@ -197,7 +267,7 @@ public class TestActivity extends AppCompatActivity
         Matrix.orthoM(projectionMatrix, 0, -ratio, ratio, -1, 1, 3, 7);
 
         // Since we requested our OpenGL thread to only render when dirty, we have to tell it to.
-        view.requestRender();
+//        view.requestRender();
     }
 
     @Override
@@ -205,20 +275,15 @@ public class TestActivity extends AppCompatActivity
         // We have setup that the background color will be black with GLES20.glClearColor in
         // onSurfaceCreated, now is the time to ask OpenGL to clear the screen with this color
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
-
-        Matrix.setIdentityM(translationMatrix, 0);
         Matrix.setIdentityM(mvpMatrix, 0);
-
+        Matrix.setIdentityM(scratch, 0);
         // Using matrices, we set the camera at the center, advanced of 7 looking to the center back
         // of -1
         Matrix.setLookAtM(viewMatrix, 0, 0, 0, 7, 0, 0, -1, 0, 1, 0);
         // We combine the scene setup we have done in onSurfaceChanged with the camera setup
         Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
-//        Matrix.multiplyMM(mvpMatrix, 0, mvpMatrix, 0, viewMatrix, 0);
         // We combile that with the applied rotation
-        Matrix.multiplyMM(mvpMatrix, 0, mvpMatrix, 0, rotationMatrix, 0);
-        // Finally, we apply the scale to our Matrix
-        Matrix.scaleM(mvpMatrix, 0, scale, scale, scale);
+        Matrix.translateM(mvpMatrix,0,  (objWH - (numCols * objWH)) / 2f, 1 + objWH / 2, 0);
         // We attach the float array containing our Matrix to the correct handle
 
         // We pass the buffer for the position
@@ -231,30 +296,45 @@ public class TestActivity extends AppCompatActivity
         GLES20.glVertexAttribPointer(vTexturePosition, 2, GLES20.GL_FLOAT, false, 0, textureCoordsBuffer);
         GLES20.glEnableVertexAttribArray(vTexturePosition);
 
-        long time = SystemClock.uptimeMillis() % 5000L;
-        float distance = -1.5f / 5000f * ((int) time);
-        Matrix.translateM(translationMatrix, 0, 0, distance, 0);
-        Matrix.multiplyMM(scratch, 0, mvpMatrix, 0, translationMatrix, 0);
-        GLES20.glUniformMatrix4fv(uMVPMatrix, 1, false, scratch, 0);
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-
-        for (int i = 0; i < 3; i++) {
-            Matrix.multiplyMM(mvpMatrix, 0, mvpMatrix, 0, repeat, 0);
-            Matrix.multiplyMM(scratch, 0, mvpMatrix, 0, translationMatrix, 0);
-            GLES20.glUniformMatrix4fv(uMVPMatrix, 1, false, scratch, 0);
-            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-        }
+//        if (traveledDistance < maxDistance) {
+//            Matrix.setIdentityM(translationMatrix, 0);
+//            Log.d("Test", "traveledDistance: " + traveledDistance);
+//            traveledTime = SystemClock.uptimeMillis() % maxTime + 1;
+//            tempTravDist = (float) (acceleration * Math.pow(traveledTime, 2) / 2);
+//            if (tempTravDist > traveledDistance) {
+//                traveledDistance = tempTravDist;
+//            } else {
+//                traveledDistance = maxDistance;
+//            }
+//            Matrix.translateM(translationMatrix, 0, 0, -traveledDistance, 0);
+//        }
+        drawAll();
+//        drawStuff();
 
         GLES20.glDisableVertexAttribArray(vPosition);
-
-//        positionBuffer2.position(0);
-//        GLES20.glVertexAttribPointer(vPosition, 3, GLES20.GL_FLOAT, false, 0, positionBuffer2);
-//        GLES20.glEnableVertexAttribArray(vPosition);
-//
-//        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-//
-//        GLES20.glDisableVertexAttribArray(vPosition);
         GLES20.glDisableVertexAttribArray(vTexturePosition);
+    }
+
+    private void drawAll() {
+        for (int i = 0; i < numRows; i++) {
+            for (int j = 0; j < numCols; j++) {
+                DrawObject obj = mDrawObjectList.get(i * numCols + j);
+                drawStuff(obj);
+                Matrix.translateM(mvpMatrix, 0, objWH, 0, 0);
+            }
+            Matrix.translateM(mvpMatrix, 0, -objWH * numCols, 0, 0);
+        }
+    }
+
+    private void drawStuff(DrawObject drawObject) {
+        Matrix.setIdentityM(scratch, 0);
+        Matrix.translateM(scratch, 0, 0, drawObject.getOffsetY() - drawObject.getTraveledDistance(maxDistance, maxTime, acceleration, SystemClock.uptimeMillis()), 0);
+//        Matrix.multiplyMM(scratch, 0, scratch, 0, translationMatrix, 0);
+        Matrix.multiplyMM(scratch, 0, scratch, 0, mvpMatrix, 0);
+        Matrix.multiplyMM(scratch, 0, scratch, 0, scaleMatrix, 0);
+        Matrix.rotateM(scratch, 0, drawObject.getAngle(), 0, 0, -1);
+        GLES20.glUniformMatrix4fv(uMVPMatrix, 1, false, scratch, 0);
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
     }
     // endregion GLSurfaceView.Renderer
 
