@@ -6,8 +6,10 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
+import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
@@ -36,10 +38,10 @@ public class TestActivity extends AppCompatActivity
 
     // region Buffers
     private static final float[] POSITION_MATRIX_1 = {
-            -1, 0, 1,  // X1,Y1,Z1
-            0, 0, 1,  // X2,Y2,Z2
+            -1, 0.5f, 1,  // X1,Y1,Z1
+            -0.5f, 0.5f, 1,  // X2,Y2,Z2
             -1, 1, 1,  // X3,Y3,Z3
-            0, 1, 1,  // X4,Y4,Z4
+            -0.5f, 1, 1,  // X4,Y4,Z4
     };
     private static final float[] POSITION_MATRIX_2 = {
             0, -1, 1,  // X1,Y1,Z1
@@ -100,6 +102,9 @@ public class TestActivity extends AppCompatActivity
     private float[] projectionMatrix = new float[16];
     private float[] viewMatrix = new float[16];
     private float[] rotationMatrix = new float[16];
+    private float[] translationMatrix = new float[16];
+    private float[] scratch = new float[16];
+    private float[] repeat = new float[16];
     private Bitmap mBitmap1;
     private Bitmap mBitmap2;
     // endregion Variables
@@ -112,13 +117,17 @@ public class TestActivity extends AppCompatActivity
 
         detector = new ScaleGestureDetector(this, this);
 
+        Matrix.setIdentityM(translationMatrix, 0);
+        Matrix.setIdentityM(repeat, 0);
+        Matrix.translateM(repeat, 0, 0.5f, 0, 0);
+
         view = (GLSurfaceView) findViewById(R.id.surface);
 //        view.setOnTouchListener(this);
         view.setPreserveEGLContextOnPause(true);
         view.setEGLContextClientVersion(2);
         view.setRenderer(this);
 //        view.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
-        view.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+//        view.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
     }
 
 
@@ -143,7 +152,7 @@ public class TestActivity extends AppCompatActivity
         Matrix.setRotateM(rotationMatrix, 0, 0, 0, 0, 1.0f);
 
         // First, we load the picture into a texture that OpenGL will be able to use
-        mBitmap1 = loadBitmapFromAssets(1);
+        mBitmap1 = loadBitmapFromAssets(3);
         mBitmap2 = loadBitmapFromAssets(2);
         int texture = createFBOTexture(mBitmap1.getWidth(), mBitmap1.getHeight());
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture);
@@ -185,7 +194,7 @@ public class TestActivity extends AppCompatActivity
         // information to the VERTEX_SHADER. In our case, we pass this information (with other) in the
         // MVP Matrix as can be seen in the onDrawFrame method.
         float ratio = (float) width / height;
-        Matrix.frustumM(projectionMatrix, 0, -ratio, ratio, -1, 1, 3, 7);
+        Matrix.orthoM(projectionMatrix, 0, -ratio, ratio, -1, 1, 3, 7);
 
         // Since we requested our OpenGL thread to only render when dirty, we have to tell it to.
         view.requestRender();
@@ -197,19 +206,20 @@ public class TestActivity extends AppCompatActivity
         // onSurfaceCreated, now is the time to ask OpenGL to clear the screen with this color
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 
+        Matrix.setIdentityM(translationMatrix, 0);
+        Matrix.setIdentityM(mvpMatrix, 0);
+
         // Using matrices, we set the camera at the center, advanced of 7 looking to the center back
         // of -1
         Matrix.setLookAtM(viewMatrix, 0, 0, 0, 7, 0, 0, -1, 0, 1, 0);
         // We combine the scene setup we have done in onSurfaceChanged with the camera setup
         Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
+//        Matrix.multiplyMM(mvpMatrix, 0, mvpMatrix, 0, viewMatrix, 0);
         // We combile that with the applied rotation
         Matrix.multiplyMM(mvpMatrix, 0, mvpMatrix, 0, rotationMatrix, 0);
         // Finally, we apply the scale to our Matrix
         Matrix.scaleM(mvpMatrix, 0, scale, scale, scale);
         // We attach the float array containing our Matrix to the correct handle
-
-
-        GLES20.glUniformMatrix4fv(uMVPMatrix, 1, false, mvpMatrix, 0);
 
         // We pass the buffer for the position
         positionBuffer1.position(0);
@@ -221,33 +231,19 @@ public class TestActivity extends AppCompatActivity
         GLES20.glVertexAttribPointer(vTexturePosition, 2, GLES20.GL_FLOAT, false, 0, textureCoordsBuffer);
         GLES20.glEnableVertexAttribArray(vTexturePosition);
 
-        // We draw our square which will represent our logo
+        long time = SystemClock.uptimeMillis() % 5000L;
+        float distance = -1.5f / 5000f * ((int) time);
+        Matrix.translateM(translationMatrix, 0, 0, distance, 0);
+        Matrix.multiplyMM(scratch, 0, mvpMatrix, 0, translationMatrix, 0);
+        GLES20.glUniformMatrix4fv(uMVPMatrix, 1, false, scratch, 0);
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-        float steps = 25;
-        long time = System.currentTimeMillis();
-        boolean itsTimeToRotate = time % 500 == 0;
-        for (int i = 0; i < steps; i++) {
-            Matrix.translateM(mvpMatrix, 0, 1/steps, 0, 0);
-            if (itsTimeToRotate) {
-                if (i % 2 == 0) {
-                    Matrix.rotateM(rotationMatrix, 0, 30, 0, 0 ,1);
-                } else {
-                    Matrix.rotateM(rotationMatrix, 0, -30, 0, 0 ,1);
-                }
 
-                Matrix.multiplyMM(mvpMatrix, 0, mvpMatrix, 0, rotationMatrix, 0);
-            }
-            GLES20.glUniformMatrix4fv(uMVPMatrix, 1, false, mvpMatrix, 0);
+        for (int i = 0; i < 3; i++) {
+            Matrix.multiplyMM(mvpMatrix, 0, mvpMatrix, 0, repeat, 0);
+            Matrix.multiplyMM(scratch, 0, mvpMatrix, 0, translationMatrix, 0);
+            GLES20.glUniformMatrix4fv(uMVPMatrix, 1, false, scratch, 0);
             GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
         }
-        Matrix.translateM(mvpMatrix, 0, -1, -1, 0);
-
-        for (int i = 0; i < steps; i++) {
-            Matrix.translateM(mvpMatrix, 0, 1/steps, 0, 0);
-            GLES20.glUniformMatrix4fv(uMVPMatrix, 1, false, mvpMatrix, 0);
-            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-        }
-        Matrix.translateM(mvpMatrix, 0, -1, 1, 0);
 
         GLES20.glDisableVertexAttribArray(vPosition);
 
