@@ -84,19 +84,14 @@ public class TestActivity extends AppCompatActivity
     private float[] projectionMatrix = new float[16];
     private float[] viewMatrix = new float[16];
     private float[] scratch = new float[16];
-    private int[] bitmapArray;
     private int[] resourceArray;
     private List<DrawObject> mDrawObjectList;
-    private Bitmap mBitmap1;
-    private Bitmap mBitmap2;
-    private long maxTime = 1000L;
-    private long traveledTime;
     private float maxDistance = 2f;
-    private float traveledDistance;
     private float acceleration = 0;
-    private int numCols = 10;
+    private int numCols = 20;
     private int numRows;
     private float objWH;
+    private float ratio;
     // endregion Variables
 
     //==============================================================================================
@@ -142,6 +137,7 @@ public class TestActivity extends AppCompatActivity
     // region GLSurfaceView.Renderer
     @Override
     public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
+        long maxTime = 2000L;
         acceleration = (float) (2 * maxDistance / Math.pow(maxTime, 2));
         scale = 1.9f;
 
@@ -150,7 +146,7 @@ public class TestActivity extends AppCompatActivity
         objWH = calcObjectWidthHeight(width, height, numCols);
         positionBuffer = createVertexBuffer(objWH);
 
-        bitmapArray = loadTextureArrayFromRes(resourceArray);
+        int[] bitmapArray = loadTextureArrayFromRes(resourceArray);
 
         mDrawObjectList = new ArrayList<>();
         List<Long> delayTimeList = new ArrayList<>();
@@ -210,9 +206,9 @@ public class TestActivity extends AppCompatActivity
         // OpenGL will stretch what we give it into a square. To avoid this, we have to send the ratio
         // information to the VERTEX_SHADER. In our case, we pass this information (with other) in the
         // MVP Matrix as can be seen in the onDrawFrame method.
-        float ratio = (float) width / height;
+        ratio = (float) width / height;
         Matrix.orthoM(projectionMatrix, 0, -ratio, ratio, -1, 1, 3, 7);
-
+        view.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
         // Since we requested our OpenGL thread to only render when dirty, we have to tell it to.
 //        view.requestRender();
     }
@@ -272,14 +268,26 @@ public class TestActivity extends AppCompatActivity
     }
 
     private void drawAllObjects() {
+        int offsetCol = 0;
+        if (ratio < 1) {
+            int tempNumCols = Math.round(numCols * ratio);
+            offsetCol = (numCols - tempNumCols) / 2;
+        }
         long time = SystemClock.uptimeMillis();
+        boolean motionEnded = true;
         for (int i = 0; i < numRows; i++) {
             for (int j = 0; j < numCols; j++) {
-                DrawObject obj = mDrawObjectList.get(i * numCols + j);
-                drawOneObject(obj, time);
+                if (j >= offsetCol && j < numCols - offsetCol) {
+                    DrawObject obj = mDrawObjectList.get(i * numCols + j);
+                    drawOneObject(obj, time);
+                    motionEnded = motionEnded && obj.isMotionEnded();
+                }
                 Matrix.translateM(mvpMatrix, 0, objWH, 0, 0);
             }
             Matrix.translateM(mvpMatrix, 0, -objWH * numCols, 0, 0);
+        }
+        if (motionEnded) {
+            view.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         }
     }
 

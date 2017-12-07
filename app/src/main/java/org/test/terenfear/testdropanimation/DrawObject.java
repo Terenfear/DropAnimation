@@ -25,6 +25,7 @@ public class DrawObject {
     private float mTraveledDistance;
     private long mStartTime = 0;
     private float[] mTranslationMat = new float[16];
+    private boolean mMotionEnded = false;
 
     public DrawObject(float objWH, int textureId, float initOffsetY, long delayTime) {
         mTextureId = textureId;
@@ -43,6 +44,8 @@ public class DrawObject {
             if (traveledTime >= mDelayTime) {
                 if (mTraveledDistance < maxDistance) {
                     mTraveledDistance = (float) (acceleration * Math.pow(traveledTime - mDelayTime, 2) / 2);
+                } else {
+                    mMotionEnded = true;
                 }
                 if (mTraveledDistance > maxDistance) {
                     mTraveledDistance = maxDistance;
@@ -64,5 +67,9 @@ public class DrawObject {
 
     public int getTextureId() {
         return mTextureId;
+    }
+
+    public boolean isMotionEnded() {
+        return mMotionEnded;
     }
 }
