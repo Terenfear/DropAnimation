@@ -19,13 +19,18 @@ import java.util.concurrent.ThreadLocalRandom;
 public class DrawObject {
     private final float mOffsetY;
     private final float mAngle;
+    private final float mOffsetZ;
     private final long mDelayTime;
+    private final int mTextureId;
     private float mTraveledDistance;
     private long mStartTime = 0;
+    private float[] mTranslationMat = new float[16];
 
-    public DrawObject(float objWH, float initOffsetY, long delayTime) {
+    public DrawObject(float objWH, int textureId, float initOffsetY, long delayTime) {
+        mTextureId = textureId;
         mDelayTime = delayTime;
         mOffsetY = (float) ThreadLocalRandom.current().nextDouble(-objWH / 4, objWH / 4) + initOffsetY;
+        mOffsetZ = ThreadLocalRandom.current().nextFloat() + 1;
         mAngle = ThreadLocalRandom.current().nextFloat() * 360;
     }
 
@@ -47,11 +52,17 @@ public class DrawObject {
         return mTraveledDistance;
     }
 
-    public float getOffsetY() {
-        return mOffsetY;
-    }
-
     public float getAngle() {
         return mAngle;
+    }
+
+    public float[] getTranslationMat(float maxDistance, float acceleration, long currentTime) {
+        Matrix.setIdentityM(mTranslationMat, 0);
+        Matrix.translateM(mTranslationMat, 0, 0, mOffsetY - getTraveledDistance(maxDistance, acceleration, currentTime), mOffsetZ);
+        return mTranslationMat;
+    }
+
+    public int getTextureId() {
+        return mTextureId;
     }
 }
