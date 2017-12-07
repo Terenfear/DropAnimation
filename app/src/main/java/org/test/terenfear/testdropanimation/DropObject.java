@@ -4,6 +4,7 @@ import android.opengl.Matrix;
 import android.os.SystemClock;
 import android.util.Log;
 
+import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -16,7 +17,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * Project name: TestDropAnimation<br>
  * ======================================================================================================================
  */
-public class DrawObject {
+public class DropObject {
     private final float mOffsetY;
     private final float mAngle;
     private final float mOffsetZ;
@@ -25,30 +26,35 @@ public class DrawObject {
     private float mTraveledDistance;
     private long mStartTime = 0;
     private float[] mTranslationMat = new float[16];
-    private boolean mMotionEnded = false;
+    private boolean mInMotion = false;
 
-    public DrawObject(float objWH, int textureId, float initOffsetY, long delayTime) {
+    public DropObject(float objWH, int textureId, float initOffsetY, long delayTime) {
         mTextureId = textureId;
         mDelayTime = delayTime;
-        mOffsetY = (float) ThreadLocalRandom.current().nextDouble(-objWH / 4, objWH / 4) + initOffsetY;
-        mOffsetZ = ThreadLocalRandom.current().nextFloat() + 1;
-        mAngle = ThreadLocalRandom.current().nextFloat() * 360;
+        Random random = new Random();
+        float maxOffset = objWH / 4;
+        mOffsetY = -maxOffset + random.nextFloat() * maxOffset * 2 + initOffsetY;
+        mOffsetZ = random.nextFloat() + 1;
+        mAngle = random.nextFloat() * 360;
     }
 
     public float getTraveledDistance(float maxDistance, float acceleration, long currentTime) {
-        if (mStartTime == 0) {
-            mStartTime = SystemClock.uptimeMillis();
-            return 0;
-        } else {
-            long traveledTime = currentTime - mStartTime;
-            if (traveledTime >= mDelayTime) {
-                if (mTraveledDistance < maxDistance) {
-                    mTraveledDistance = (float) (acceleration * Math.pow(traveledTime - mDelayTime, 2) / 2);
-                } else {
-                    mMotionEnded = true;
-                }
-                if (mTraveledDistance > maxDistance) {
-                    mTraveledDistance = maxDistance;
+        currentTime = SystemClock.uptimeMillis();
+        if (mInMotion) {
+            if (mStartTime == 0) {
+                mStartTime = SystemClock.uptimeMillis();
+                return 0;
+            } else {
+                long traveledTime = currentTime - mStartTime;
+                if (traveledTime >= mDelayTime) {
+                    if (mTraveledDistance < maxDistance) {
+                        mTraveledDistance = (float) (acceleration * Math.pow(traveledTime - mDelayTime, 2) / 2);
+                    } else {
+                        mInMotion = false;
+                    }
+                    if (mTraveledDistance > maxDistance) {
+                        mTraveledDistance = maxDistance;
+                    }
                 }
             }
         }
@@ -69,7 +75,11 @@ public class DrawObject {
         return mTextureId;
     }
 
-    public boolean isMotionEnded() {
-        return mMotionEnded;
+    public boolean isInMotion() {
+        return mInMotion;
+    }
+
+    public void setInMotion(boolean inMotion) {
+        mInMotion = inMotion;
     }
 }

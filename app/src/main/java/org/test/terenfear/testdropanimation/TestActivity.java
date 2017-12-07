@@ -2,6 +2,7 @@ package org.test.terenfear.testdropanimation;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.PixelFormat;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
@@ -85,7 +86,7 @@ public class TestActivity extends AppCompatActivity
     private float[] viewMatrix = new float[16];
     private float[] scratch = new float[16];
     private int[] resourceArray;
-    private List<DrawObject> mDrawObjectList;
+    private List<DropObject> mDropObjectList;
     private float maxDistance = 2f;
     private float acceleration = 0;
     private int numCols = 20;
@@ -115,6 +116,8 @@ public class TestActivity extends AppCompatActivity
         };
 
         view = (GLSurfaceView) findViewById(R.id.surface);
+        view.setEGLConfigChooser(8, 8, 8, 8, 16, 0);
+        view.getHolder().setFormat(PixelFormat.TRANSLUCENT);
         view.setPreserveEGLContextOnPause(true);
         view.setEGLContextClientVersion(2);
         view.setRenderer(this);
@@ -148,7 +151,7 @@ public class TestActivity extends AppCompatActivity
 
         int[] bitmapArray = loadTextureArrayFromRes(resourceArray);
 
-        mDrawObjectList = new ArrayList<>();
+        mDropObjectList = new ArrayList<>();
         List<Long> delayTimeList = new ArrayList<>();
         numRows = Math.round(2 / objWH) + 1;
         for (int i = 0; i < numCols; i++) {
@@ -163,13 +166,24 @@ public class TestActivity extends AppCompatActivity
                 delay += ThreadLocalRandom.current().nextLong(0, maxTime / numRows);
                 Log.d("Test", "el " + i + "-" + j + ": delay = " + delay);
                 int textureId = bitmapArray[ThreadLocalRandom.current().nextInt(0, bitmapArray.length)];
-                mDrawObjectList.add(new DrawObject(objWH, textureId, offsetY, delay));
+                DropObject temp = new DropObject(objWH, textureId, offsetY, delay);
+                temp.setInMotion(true);
+                mDropObjectList.add(temp);
                 delayTimeList.set(j, delay);
             }
         }
 
         // A little bit of initialization
         GLES20.glClearColor(1f, 1f, 1f, 0f);
+
+//        GLES20.glDisable(GL10.GL_DITHER);
+//        GLES20.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT,
+//             GL10.GL_FASTEST);
+//
+//        GLES20.glClearColor(0,0,0,0);
+//        GLES20.glEnable(GL10.GL_CULL_FACE);
+//        GLES10.glShadeModel(GL10.GL_SMOOTH);
+//        GLES20.glEnable(GL10.GL_DEPTH_TEST);
 
         // First, we load the picture into a texture that OpenGL will be able to use
 
@@ -274,29 +288,29 @@ public class TestActivity extends AppCompatActivity
             offsetCol = (numCols - tempNumCols) / 2;
         }
         long time = SystemClock.uptimeMillis();
-        boolean motionEnded = true;
+        boolean inMotion = false;
         for (int i = 0; i < numRows; i++) {
             for (int j = 0; j < numCols; j++) {
                 if (j >= offsetCol && j < numCols - offsetCol) {
-                    DrawObject obj = mDrawObjectList.get(i * numCols + j);
+                    DropObject obj = mDropObjectList.get(i * numCols + j);
                     drawOneObject(obj, time);
-                    motionEnded = motionEnded && obj.isMotionEnded();
+                    inMotion = inMotion || obj.isInMotion();
                 }
                 Matrix.translateM(mvpMatrix, 0, objWH, 0, 0);
             }
             Matrix.translateM(mvpMatrix, 0, -objWH * numCols, 0, 0);
         }
-        if (motionEnded) {
+        if (!inMotion) {
             view.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         }
     }
 
-    private void drawOneObject(DrawObject drawObject, long time) {
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, drawObject.getTextureId());
+    private void drawOneObject(DropObject dropObject, long time) {
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, dropObject.getTextureId());
         Matrix.setIdentityM(scratch, 0);
-        Matrix.multiplyMM(scratch, 0, mvpMatrix, 0, drawObject.getTranslationMat(maxDistance, acceleration, time), 0);
+        Matrix.multiplyMM(scratch, 0, mvpMatrix, 0, dropObject.getTranslationMat(maxDistance, acceleration, time), 0);
         Matrix.scaleM(scratch, 0, scale, scale, 1);
-        Matrix.rotateM(scratch, 0, drawObject.getAngle(), 0, 0, -1);
+        Matrix.rotateM(scratch, 0, dropObject.getAngle(), 0, 0, -1);
         GLES20.glUniformMatrix4fv(uMVPMatrix, 1, false, scratch, 0);
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
     }
