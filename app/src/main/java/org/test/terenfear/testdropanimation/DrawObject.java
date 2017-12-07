@@ -19,28 +19,29 @@ import java.util.concurrent.ThreadLocalRandom;
 public class DrawObject {
     private final float mOffsetY;
     private final float mAngle;
-    private final float mBonusDistance;
+    private final long mDelayTime;
     private float mTraveledDistance;
+    private long mStartTime = 0;
 
-    public DrawObject(float objWH, float initOffsetY, float bonusDistance) {
-        mBonusDistance = bonusDistance;
-        mOffsetY = /*(float) ThreadLocalRandom.current().nextDouble(-objWH / 4, objWH / 4) +*/ initOffsetY + mBonusDistance;
-        mAngle = /*ThreadLocalRandom.current().nextFloat() * 36*/0;
+    public DrawObject(float objWH, float initOffsetY, long delayTime) {
+        mDelayTime = delayTime;
+        mOffsetY = (float) ThreadLocalRandom.current().nextDouble(-objWH / 4, objWH / 4) + initOffsetY;
+        mAngle = ThreadLocalRandom.current().nextFloat() * 360;
     }
 
-    public float getTraveledDistance(float maxDistance, long maxTime, float acceleration, long currentTime) {
-        float desiredDistance = maxDistance + mBonusDistance;
-        long desiredTime =  Math.round((maxTime * desiredDistance / maxDistance));
-        if (mTraveledDistance < desiredDistance) {
-            long traveledTime = currentTime % desiredTime + 1;
-            float tempTravDist = (float) (acceleration * Math.pow(traveledTime, 2) / 2);
-            if (tempTravDist > mTraveledDistance) {
-                mTraveledDistance = tempTravDist;
-                if (mTraveledDistance > desiredDistance) {
-                    mTraveledDistance = desiredDistance;
+    public float getTraveledDistance(float maxDistance, float acceleration, long currentTime) {
+        if (mStartTime == 0) {
+            mStartTime = SystemClock.uptimeMillis();
+            return 0;
+        } else {
+            long traveledTime = currentTime - mStartTime;
+            if (traveledTime >= mDelayTime) {
+                if (mTraveledDistance < maxDistance) {
+                    mTraveledDistance = (float) (acceleration * Math.pow(traveledTime - mDelayTime, 2) / 2);
                 }
-            } else {
-                mTraveledDistance = desiredDistance;
+                if (mTraveledDistance > maxDistance) {
+                    mTraveledDistance = maxDistance;
+                }
             }
         }
         return mTraveledDistance;
@@ -52,9 +53,5 @@ public class DrawObject {
 
     public float getAngle() {
         return mAngle;
-    }
-
-    public float getBonusDistance() {
-        return mBonusDistance;
     }
 }

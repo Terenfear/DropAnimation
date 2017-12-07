@@ -112,11 +112,10 @@ public class TestActivity extends AppCompatActivity
     private List<DrawObject> mDrawObjectList;
     private Bitmap mBitmap1;
     private Bitmap mBitmap2;
-    private long maxTime = 5000L;
+    private long maxTime = 1000L;
     private long traveledTime;
     private float maxDistance = 2f;
     private float traveledDistance;
-    private float tempTravDist = 0;
     private float acceleration = 0;
     private int numCols = 10;
     private int numRows;
@@ -184,7 +183,7 @@ public class TestActivity extends AppCompatActivity
         traveledTime = 0;
         traveledDistance = 0;
         acceleration = (float) (2 * maxDistance / Math.pow(maxTime, 2));
-        scale = 1f;
+        scale = 1.9f;
 
         Matrix.setIdentityM(translationMatrix, 0);
 
@@ -194,20 +193,21 @@ public class TestActivity extends AppCompatActivity
         positionBuffer1 = createFBO(objWH);
 
         mDrawObjectList = new ArrayList<>();
-        List<Float> bonusDistances = new ArrayList<>();
+        List<Long> delayTimeList = new ArrayList<>();
+        numRows = Math.round(2 / objWH) + 1;
         for (int i = 0; i < numCols; i++) {
-            bonusDistances.add((float) ThreadLocalRandom.current().nextDouble(0, objWH));
+            delayTimeList.add(ThreadLocalRandom.current().nextLong(0, maxTime / numRows));
         }
         float offsetY;
-        float bonusDist;
-        numRows = Math.round(2 / objWH) + 1;
+        long delay;
         for (int i = 0; i < numRows; i++) {
             offsetY = objWH * i;
             for (int j = 0; j < numCols; j++) {
-                bonusDist = bonusDistances.get(j);
-                bonusDist += (float) ThreadLocalRandom.current().nextDouble(0, objWH);
-                mDrawObjectList.add(new DrawObject(objWH, offsetY, bonusDist));
-                bonusDistances.set(j, bonusDist);
+                delay = delayTimeList.get(j);
+                delay += ThreadLocalRandom.current().nextLong(0, maxTime / numRows);
+                Log.d("Test", "el " + i + "-" + j + ": delay = " + delay);
+                mDrawObjectList.add(new DrawObject(objWH, offsetY, delay));
+                delayTimeList.set(j, delay);
             }
         }
 
@@ -316,19 +316,20 @@ public class TestActivity extends AppCompatActivity
     }
 
     private void drawAll() {
+        long time = SystemClock.uptimeMillis();
         for (int i = 0; i < numRows; i++) {
             for (int j = 0; j < numCols; j++) {
                 DrawObject obj = mDrawObjectList.get(i * numCols + j);
-                drawStuff(obj);
+                drawStuff(obj, time);
                 Matrix.translateM(mvpMatrix, 0, objWH, 0, 0);
             }
             Matrix.translateM(mvpMatrix, 0, -objWH * numCols, 0, 0);
         }
     }
 
-    private void drawStuff(DrawObject drawObject) {
+    private void drawStuff(DrawObject drawObject, long time) {
         Matrix.setIdentityM(scratch, 0);
-        Matrix.translateM(scratch, 0, 0, drawObject.getOffsetY() - drawObject.getTraveledDistance(maxDistance, maxTime, acceleration, SystemClock.uptimeMillis()), 0);
+        Matrix.translateM(scratch, 0, 0, drawObject.getOffsetY() - drawObject.getTraveledDistance(maxDistance, acceleration, time), 0);
 //        Matrix.multiplyMM(scratch, 0, scratch, 0, translationMatrix, 0);
         Matrix.multiplyMM(scratch, 0, scratch, 0, mvpMatrix, 0);
         Matrix.multiplyMM(scratch, 0, scratch, 0, scaleMatrix, 0);
