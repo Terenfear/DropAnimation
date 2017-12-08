@@ -13,7 +13,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mDropItemsView = findViewById(R.id.vDropItemSurface);
-        findViewById(R.id.vBtnDropIn).setOnClickListener(view -> mDropItemsView.animDropIn(1000, 20, 1.9f,
+        findViewById(R.id.vBtnDropIn).setOnClickListener(view -> mDropItemsView.animDropIn(
+                2000,
+                20,
+                1.9f,
                 R.drawable.ic_drop_1,
                 R.drawable.ic_drop_2,
                 R.drawable.ic_drop_3,

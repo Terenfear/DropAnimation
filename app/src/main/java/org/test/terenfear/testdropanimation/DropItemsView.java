@@ -117,13 +117,13 @@ public class DropItemsView extends GLSurfaceView {
     //==============================================================================================
 
     public void animDropIn(long duration, int rowLength, float objectScale, @DrawableRes int... drawableIds) {
+        Log.d(TAG, "animDropIn: ");
         mMaxTime = duration;
         mDropObjectList.clear();
         mDroppingOut = false;
         mNumCols = rowLength;
         mObjectScale = objectScale;
         mMaxDistance = 2.0f;
-        mAcceleration = (float) (2 * 2 / Math.pow(mMaxTime, 2));
         mBitmapArray = loadTextureArrayFromRes(drawableIds);
 
         mObjectWH = calcObjectWidthHeight(mWidth, mHeight, mNumCols);
@@ -131,16 +131,20 @@ public class DropItemsView extends GLSurfaceView {
 
         List<Long> delayTimeList = new ArrayList<>();
         mNumRows = Math.round(2 / mObjectWH) + 1;
+        long minDelay = mMaxTime / mNumRows / 3;
+        long maxDelay = mMaxTime / mNumRows / 2;
         for (int i = 0; i < mNumCols; i++) {
-            delayTimeList.add(mRandom.nextLong() % (mMaxTime / mNumRows));
+            delayTimeList.add(randomLong(minDelay, maxDelay));
         }
+        mMaxTime /= 2;
+        mAcceleration = (float) (2 * 2 / Math.pow(mMaxTime, 2));
         float offsetY;
         long delay;
         for (int i = 0; i < mNumRows; i++) {
             offsetY = mObjectWH * i;
             for (int j = 0; j < mNumCols; j++) {
                 delay = delayTimeList.get(j);
-                delay += mRandom.nextLong() % (mMaxTime / mNumRows);
+                delay += randomLong(minDelay, maxDelay);
                 int textureId = mBitmapArray[mRandom.nextInt(mBitmapArray.length)];
                 mDropObjectList.add(new DropObject(mObjectWH, textureId, offsetY, delay));
                 delayTimeList.set(j, delay);
@@ -176,6 +180,14 @@ public class DropItemsView extends GLSurfaceView {
                 mHeight = getHeight();
             }
         });
+    }
+
+    private long randomLong(long min, long max) {
+        return (long) (min + mRandom.nextDouble() * (max - min));
+    }
+
+    private long randomLong(long boundary) {
+        return (long) (mRandom.nextDouble() * boundary);
     }
 
     private void setObjectsInMotion(boolean inMotion) {
@@ -217,20 +229,13 @@ public class DropItemsView extends GLSurfaceView {
     }
 
     private void drawAllObjects() {
-        int offsetCol = 0;
-        if (mScreenRatio < 1) {
-            int tempNumCols = Math.round(mNumCols * mScreenRatio);
-            offsetCol = (mNumCols - tempNumCols) / 2;
-        }
-        long time = SystemClock.currentThreadTimeMillis();
+        long time = SystemClock.uptimeMillis();
         boolean inMotion = false;
         for (int i = 0; i < mNumRows; i++) {
             for (int j = 0; j < mNumCols; j++) {
                 DropObject obj = mDropObjectList.get(i * mNumCols + j);
-//                if (j >= offsetCol && j < mNumCols - offsetCol) {
-                    drawOneObject(obj, time);
-                    inMotion = inMotion || obj.isInMotion();
-//                }
+                drawOneObject(obj, time);
+                inMotion = inMotion || obj.isInMotion();
                 Matrix.translateM(mvpMatrix, 0, mObjectWH, 0, 0);
             }
             Matrix.translateM(mvpMatrix, 0, -mObjectWH * mNumCols, 0, 0);
@@ -310,6 +315,7 @@ public class DropItemsView extends GLSurfaceView {
 
         @Override
         public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
+            Log.d(TAG, "onSurfaceCreated: ");
             GLES20.glClearColor(1f, 1f, 1f, 0f);
 
             mTexture = loadTextureArrayFromRes(R.drawable.ic_drop_1)[0];
@@ -342,6 +348,7 @@ public class DropItemsView extends GLSurfaceView {
 
         @Override
         public void onSurfaceChanged(GL10 gl10, int width, int height) {
+            Log.d(TAG, "onSurfaceChanged: ");
             GLES20.glViewport(0, 0, width, height);
             mScreenRatio = (float) width / height;
             Matrix.orthoM(projectionMatrix, 0, -mScreenRatio, mScreenRatio, -1, 1, 3, 7);

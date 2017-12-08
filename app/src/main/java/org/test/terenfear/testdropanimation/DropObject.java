@@ -39,10 +39,10 @@ public class DropObject {
     }
 
     public float getTraveledDistance(float maxDistance, float acceleration, long currentTime) {
-        currentTime = SystemClock.uptimeMillis();
+//        currentTime = SystemClock.uptimeMillis();
         if (mInMotion) {
             if (mStartTime == 0) {
-                mStartTime = SystemClock.uptimeMillis();
+                mStartTime = currentTime;
                 return 0;
             } else {
                 long traveledTime = currentTime - mStartTime;
