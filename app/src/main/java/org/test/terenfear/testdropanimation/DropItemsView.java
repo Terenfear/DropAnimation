@@ -187,7 +187,6 @@ public class DropItemsView extends GLSurfaceView {
 
     private void init() {
         Log.d(TAG, "init: " + Thread.currentThread().getId());
-        setTransparentBackground(false);
         setPreserveEGLContextOnPause(true);
         setEGLContextClientVersion(2);
         setRenderer(mRenderer);

@@ -16,9 +16,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         mDropItemsView = findViewById(R.id.vDropItemSurface);
         mDropItemsView
-                .setDuration(2000)
-                .setObjectScale(1.7f)
-                .setRowLength(10)
+                .setDuration(3000)
+                .setObjectScale(1.9f)
+                .setRowLength(20)
                 .setResourceIds(R.drawable.ic_drop_1,
                         R.drawable.ic_drop_2,
                         R.drawable.ic_drop_3,
