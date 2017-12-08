@@ -18,7 +18,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * ======================================================================================================================
  */
 public class DropObject {
-    private final float mOffsetY;
+    private float mOffsetY;
     private final float mAngle;
     private final float mOffsetZ;
     private final long mDelayTime;
@@ -81,5 +81,11 @@ public class DropObject {
 
     public void setInMotion(boolean inMotion) {
         mInMotion = inMotion;
+    }
+
+    public void resetTraveled() {
+        mStartTime = 0;
+        mOffsetY -= mTraveledDistance;
+        mTraveledDistance = 0;
     }
 }
