@@ -24,6 +24,11 @@
         android:layout_alignParentRight="true"
         android:layout_centerVertical="true">
         <Button
+            android:id="@+id/vBtnStop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Stop"/>
+        <Button
             android:id="@+id/vBtnDropIn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
                 .setStartListener(() -> Log.d(TAG, "anim start"))
                 .setEndListener(() -> Log.d(TAG, "anim end"));
 
+        findViewById(R.id.vBtnStop).setOnClickListener(view -> mDropItemsView.stopAnimation());
         findViewById(R.id.vBtnDropIn).setOnClickListener(view -> mDropItemsView.startDropIn());
         findViewById(R.id.vBtnDropOut).setOnClickListener(view ->mDropItemsView.startDropOut());
         findViewById(R.id.vBtnDialog).setOnClickListener(view ->startDialog());

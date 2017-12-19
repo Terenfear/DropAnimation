@@ -58,8 +58,11 @@ public class DropItemsView extends GLSurfaceView {
             0, 0, // X3,Y3
             1, 0, // X4,Y4
     };
-    private FloatBuffer textureCoordsBuffer = ByteBuffer.allocateDirect(TEXTURE_COORDS.length * 4)
-            .order(ByteOrder.nativeOrder()).asFloatBuffer().put(TEXTURE_COORDS);
+    private FloatBuffer TEXTURE_COORDS_BUFFER = ByteBuffer
+            .allocateDirect(TEXTURE_COORDS.length * 4)
+            .order(ByteOrder.nativeOrder())
+            .asFloatBuffer()
+            .put(TEXTURE_COORDS);
 
     @Language("GLSL")
     private static final String VERTEX_SHADER = ""+
@@ -91,7 +94,7 @@ public class DropItemsView extends GLSurfaceView {
     private float[] projectionMatrix = new float[16];
     private float[] viewMatrix = new float[16];
     private float[] scratch = new float[16];
-    private List<DropObject> mDropObjectList = new ArrayList<>();
+    private volatile List<DropObject> mDropObjectList = new ArrayList<>();
     private float mMaxDistance = 2f;
     private float mAcceleration;
     private int mNumRows;
@@ -108,32 +111,38 @@ public class DropItemsView extends GLSurfaceView {
     private long mDuration = 2000;
     private int mRowLength = 10;
     private float mObjectScale = 1.9f;
+    private boolean mIsStop;
     // endregion Variables
 
     public DropItemsView(Context context) {
         super(context);
         init();
-        setZOrderOnTop(true);
     }
 
     public DropItemsView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
-        setZOrderOnTop(true);
     }
 
     //==============================================================================================
     //---------------------------------------Public methods-----------------------------------------
     //==============================================================================================
+    public void stopAnimation(){
+        mDroppingOut = false;
+        mDropObjectList.clear();
+        initAnimationObjects();
+        mIsStop = true;
+        setObjectsInMotion(false);
+    }
 
     public void startDropIn() {
         if (mInMotion) {
             return;
         }
         Log.d(TAG, "startDropIn: ");
+        mIsStop = false;
         mDroppingOut = false;
         mDropObjectList.clear();
-
         initAnimationObjects();
 
         setObjectsInMotion(true);
@@ -143,6 +152,7 @@ public class DropItemsView extends GLSurfaceView {
         if (mInMotion) {
             return;
         }
+        mIsStop = false;
         mDroppingOut = true;
         if (mDropObjectList.isEmpty()) {
             initAnimationObjects();
@@ -150,6 +160,7 @@ public class DropItemsView extends GLSurfaceView {
             float excessiveHeight = (mNumRows * mObjectWH - 2) * mObjectScale;
             mMaxDistance = 2 + excessiveHeight * 1.1f;
         }
+
         setObjectsInMotion(true);
     }
 
@@ -189,9 +200,9 @@ public class DropItemsView extends GLSurfaceView {
 
     private void init() {
         Log.d(TAG, "init: " + Thread.currentThread().getId());
+        setZOrderOnTop(true);
         setPreserveEGLContextOnPause(true);
         setEGLContextClientVersion(2);
-//        setEGLConfigChooser(false);
         setEGLConfigChooser(8,8,8,8,0,0);
         setRenderer(mRenderer);
         setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
@@ -246,10 +257,6 @@ public class DropItemsView extends GLSurfaceView {
 
     private long randomLong(long min, long max) {
         return (long) (min + mRandom.nextDouble() * (max - min));
-    }
-
-    private long randomLong(long boundary) {
-        return (long) (mRandom.nextDouble() * boundary);
     }
 
     private void setObjectsInMotion(boolean inMotion) {
@@ -310,6 +317,9 @@ public class DropItemsView extends GLSurfaceView {
 
     private void drawAllObjects() {
         long time = SystemClock.uptimeMillis();
+        if( mDropObjectList.isEmpty() ){
+            return;
+        }
         boolean inMotion = false;
         for (int i = 0; i < mNumRows; i++) {
             for (int j = 0; j < mRowLength; j++) {
@@ -456,15 +466,22 @@ public class DropItemsView extends GLSurfaceView {
                 GLES20.glEnableVertexAttribArray(vPosition);
 
                 // We pass the buffer for the texture position
-                textureCoordsBuffer.position(0);
-                GLES20.glVertexAttribPointer(vTexturePosition, 2, GLES20.GL_FLOAT, false, 0, textureCoordsBuffer);
+                TEXTURE_COORDS_BUFFER.position(0);
+                GLES20.glVertexAttribPointer(vTexturePosition, 2, GLES20.GL_FLOAT, false, 0, TEXTURE_COORDS_BUFFER);
                 GLES20.glEnableVertexAttribArray(vTexturePosition);
 
-                drawAllObjects();
+                if( !mIsStop ){
+                    try{
+                        drawAllObjects();
+                    } catch (Throwable throwable){
+                        throwable.printStackTrace();
+                    }
+                }
 
                 GLES20.glDisableVertexAttribArray(vPosition);
                 GLES20.glDisableVertexAttribArray(vTexturePosition);
             }
         }
     };
+
 }
