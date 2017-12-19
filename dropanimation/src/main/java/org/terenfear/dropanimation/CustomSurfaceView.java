@@ -1,4 +1,4 @@
-package org.test.terenfear.testdropanimation;
+package org.terenfear.dropanimation;
 
 import android.content.Context;
 import android.content.res.Resources;

@@ -9,6 +9,15 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private DropItemsView mDropItemsView;
+    private static final int[] RESOURCES_ID_ARRAY = new int[]{
+            R.drawable.ic_drop_1,
+            R.drawable.ic_drop_2,
+            R.drawable.ic_drop_3,
+            R.drawable.ic_drop_4,
+            R.drawable.ic_drop_5,
+            R.drawable.ic_drop_6,
+            R.drawable.ic_drop_7
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,11 +29,7 @@ public class MainActivity extends AppCompatActivity {
                 .setDuration(5000)
                 .setObjectScale(1.9f)
                 .setRowLength(20)
-                .setResourceIds(
-                        R.drawable.sticker_batman,
-                        R.drawable.sticker_crown,
-                        R.drawable.sticker_lips,
-                        R.drawable.sticker_glasses)
+                .setResourceIds(RESOURCES_ID_ARRAY)
                 .setStartListener(() -> Log.d(TAG, "anim start"))
                 .setEndListener(() -> Log.d(TAG, "anim end"));
 

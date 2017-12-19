@@ -12,7 +12,7 @@
         android:background="@color/colorAccent"
         android:text="Hello world"/>
 
-    <org.test.terenfear.testdropanimation.DropItemsView
+    <org.terenfear.dropanimation.DropItemsView
         android:id="@+id/vDropItemSurface"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>

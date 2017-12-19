@@ -1,4 +1,4 @@
-package org.test.terenfear.testdropanimation;
+package org.terenfear.dropanimation;
 
 import android.opengl.Matrix;
 import android.os.SystemClock;
