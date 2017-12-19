@@ -60,10 +60,4 @@ freeline_project_description.json
 /.idea/
 .idea/
 DropAnimation-opengl.iml
-app/
-build.gradle
-gradle.properties
-gradle/
-gradlew
-gradlew.bat
 settings.gradle
