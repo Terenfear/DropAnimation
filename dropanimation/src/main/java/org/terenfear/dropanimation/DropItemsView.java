@@ -353,9 +353,6 @@ public class DropItemsView extends GLSurfaceView {
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureIds[i]);
 
-//            GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
-//            GLES20.glEnable(GLES20.GL_BLEND);
-
             GLES20.glEnable(GL10.GL_BLEND);
             GLES20.glBlendFunc(GL10.GL_ONE, GL10.GL_ONE_MINUS_SRC_ALPHA);
 
