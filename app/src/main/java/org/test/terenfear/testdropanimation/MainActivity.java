@@ -17,8 +17,8 @@ public class MainActivity extends AppCompatActivity {
         mDropItemsView = findViewById(R.id.vDropItemSurface);
         mDropItemsView
                 .setDuration(5000)
-                //.setObjectScale(1.9f)
-                .setObjectScale(1f)
+                .setObjectScale(1.9f)
+//                .setObjectScale(1f)
                 .setRowLength(20)
                 .setResourceIds(
                         R.drawable.sticker_batman,

@@ -190,12 +190,9 @@ public class DropItemsView extends GLSurfaceView {
     private void init() {
         Log.d(TAG, "init: " + Thread.currentThread().getId());
         setPreserveEGLContextOnPause(true);
-//        setEGLContextClientVersion(2);
-//        getHolder().setFormat(PixelFormat.TRANSLUCENT);
-//        setRenderer(mRenderer);
-
         setEGLContextClientVersion(2);
-        setEGLConfigChooser(8,8,8,8,16,0);
+//        setEGLConfigChooser(false);
+        setEGLConfigChooser(8,8,8,8,0,0);
         setRenderer(mRenderer);
         setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         getHolder().setFormat(PixelFormat.TRANSLUCENT);
@@ -355,8 +352,13 @@ public class DropItemsView extends GLSurfaceView {
             Bitmap bitmap = BitmapFactory.decodeResource(getResources(), resourceIds[i], options);
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureIds[i]);
-            GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
-            GLES20.glEnable(GLES20.GL_BLEND);
+
+//            GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+//            GLES20.glEnable(GLES20.GL_BLEND);
+
+            GLES20.glEnable(GL10.GL_BLEND);
+            GLES20.glBlendFunc(GL10.GL_ONE, GL10.GL_ONE_MINUS_SRC_ALPHA);
+
             GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
             GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
             GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
