@@ -33,6 +33,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Drop out"/>
+        <Button
+            android:id="@+id/vBtnDialog"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Dialog"/>
         <Switch
             android:id="@+id/vPauseSwitch"
             android:layout_width="wrap_content"

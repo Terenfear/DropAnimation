@@ -1,10 +1,13 @@
 package org.test.terenfear.testdropanimation;
 
 import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Switch;
 
+import org.terenfear.dropanimation.DropItemsSupportDialogFragment;
 import org.terenfear.dropanimation.DropItemsView;
 
 public class MainActivity extends AppCompatActivity {
@@ -35,8 +38,9 @@ public class MainActivity extends AppCompatActivity {
                 .setStartListener(() -> Log.d(TAG, "anim start"))
                 .setEndListener(() -> Log.d(TAG, "anim end"));
 
-        findViewById(R.id.vBtnDropIn).setOnClickListener(view -> mDropItemsView.animDropIn());
-        findViewById(R.id.vBtnDropOut).setOnClickListener(view ->mDropItemsView.animDropOut());
+        findViewById(R.id.vBtnDropIn).setOnClickListener(view -> mDropItemsView.startDropIn());
+        findViewById(R.id.vBtnDropOut).setOnClickListener(view ->mDropItemsView.startDropOut());
+        findViewById(R.id.vBtnDialog).setOnClickListener(view ->startDialog());
         findViewById(R.id.vPauseSwitch).setOnClickListener(view -> {
             if (((Switch) view).isChecked()) {
                 mDropItemsView.onResume();
@@ -44,6 +48,14 @@ public class MainActivity extends AppCompatActivity {
                 mDropItemsView.onPause();
             }
         });
+    }
+
+    private void startDialog() {
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        Bundle bundle = new Bundle();
+        bundle.putIntArray( DropItemsSupportDialogFragment.KEY_IMAGE_RESOURCES_ARRAY, RESOURCES_ID_ARRAY );
+        DialogFragment dialogFragment = DropItemsSupportDialogFragment.newInstance(bundle);
+        dialogFragment.show( ft, "DROPITEMS" );
     }
 
     @Override
@@ -56,6 +68,5 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         mDropItemsView.onPause();
-
     }
 }

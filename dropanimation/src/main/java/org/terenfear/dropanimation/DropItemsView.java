@@ -126,11 +126,11 @@ public class DropItemsView extends GLSurfaceView {
     //---------------------------------------Public methods-----------------------------------------
     //==============================================================================================
 
-    public void animDropIn() {
+    public void startDropIn() {
         if (mInMotion) {
             return;
         }
-        Log.d(TAG, "animDropIn: ");
+        Log.d(TAG, "startDropIn: ");
         mDroppingOut = false;
         mDropObjectList.clear();
 
@@ -139,7 +139,7 @@ public class DropItemsView extends GLSurfaceView {
         setObjectsInMotion(true);
     }
 
-    public void animDropOut() {
+    public void startDropOut() {
         if (mInMotion) {
             return;
         }
