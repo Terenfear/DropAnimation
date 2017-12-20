@@ -84,7 +84,7 @@ public class DropItemsSupportDialogFragment extends DialogFragment {
                     .setRowLength(rowLength)
                     .setObjectScale(objectScale)
                     .setResourceIds(array)
-                    .setEndListener(() -> {
+                    .setEndListener(type -> {
                         mIsDropIn = !mIsDropIn;
                         startAnimation();
                     });

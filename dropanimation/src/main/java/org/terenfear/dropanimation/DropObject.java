@@ -40,6 +40,10 @@ public class DropObject {
     }
 
     public float getTraveledDistance(float maxDistance, float acceleration, long currentTime) {
+        return this.getTraveledDistance(maxDistance, acceleration, currentTime, 0);
+    }
+
+    public float getTraveledDistance(float maxDistance, float acceleration, long currentTime, float startVelocity) {
         if (mInMotion) {
             if (mStartTime == 0) {
                 mStartTime = currentTime;
@@ -48,7 +52,8 @@ public class DropObject {
                 long traveledTime = currentTime - mStartTime;
                 if (traveledTime >= mDelayTime) {
                     if (mTraveledDistance < maxDistance) {
-                        mTraveledDistance = (float) (acceleration * Math.pow(traveledTime - mDelayTime, 2) / 2);
+                        long tempTime = traveledTime - mDelayTime;
+                        mTraveledDistance = (float) ( startVelocity * tempTime + acceleration * Math.pow(tempTime, 2) / 2);
                     } else {
                         mInMotion = false;
                     }
@@ -65,9 +70,9 @@ public class DropObject {
         return mAngle;
     }
 
-    public float[] getTranslationMat(float maxDistance, float acceleration, long currentTime) {
+    public float[] getTranslationMat(float maxDistance, float acceleration, long currentTime, float startVelocity) {
         Matrix.setIdentityM(mTranslationMat, 0);
-        Matrix.translateM(mTranslationMat, 0, 0, mOffsetY - getTraveledDistance(maxDistance, acceleration, currentTime), mOffsetZ);
+        Matrix.translateM(mTranslationMat, 0, 0, mOffsetY - getTraveledDistance(maxDistance, acceleration, currentTime, startVelocity), mOffsetZ);
         return mTranslationMat;
     }
 

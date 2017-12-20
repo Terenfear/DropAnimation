@@ -31,12 +31,21 @@ public class MainActivity extends AppCompatActivity {
 
         mDropItemsView = findViewById(R.id.vDropItemSurface);
         mDropItemsView
-                .setDuration(5000)
+                .setDropInStartVelocity(0.005f)
+                .setDropOutStartVelocity(0.005f)
+                .setDuration(3000)
                 .setObjectScale(1.9f)
                 .setRowLength(20)
+                .setARGBColors(0.5f, 1f, 1f, 0f)
                 .setResourceIds(RESOURCES_ID_ARRAY)
-                .setStartListener(() -> Log.d(TAG, "anim start"))
-                .setEndListener(() -> Log.d(TAG, "anim end"));
+                .setStartListener(type -> {
+                    Log.d(TAG, "anim start: " + type.name());
+                    mDropItemsView.setARGBColors(0.5f, 0f, 1f, 1f);
+                })
+                .setEndListener(type -> {
+                    Log.d(TAG, "anim end: " + type.name());
+                    mDropItemsView.setARGBColors(0.5f, 1f, 1f, 0f);
+                });
 
         findViewById(R.id.vBtnStop).setOnClickListener(view -> mDropItemsView.stopAnimation());
         findViewById(R.id.vBtnDropIn).setOnClickListener(view -> mDropItemsView.startDropIn());

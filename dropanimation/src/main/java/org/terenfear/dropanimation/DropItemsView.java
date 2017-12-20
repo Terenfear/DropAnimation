@@ -41,11 +41,11 @@ import javax.microedition.khronos.opengles.GL10;
 public class DropItemsView extends GLSurfaceView {
 
     public interface AnimStartListener {
-        void onAnimationStarted();
+        void onAnimationStarted(DropType type);
     }
 
     public interface AnimEndListener {
-        void onAnimationEnded();
+        void onAnimationEnded(DropType type);
     }
 
     public static final String MVP_MATRIX = "uMVPMatrix";
@@ -112,6 +112,13 @@ public class DropItemsView extends GLSurfaceView {
     private int mRowLength = 10;
     private float mObjectScale = 1.9f;
     private boolean mIsStop;
+    private float mStartDropInVelocity = 0;
+    private float mStartDropOutVelocity = 0;
+
+    private float mAColor = 0f;
+    private float mRColor = 0f;
+    private float mGColor = 0f;
+    private float mBColor = 0f;
     // endregion Variables
 
     public DropItemsView(Context context) {
@@ -194,6 +201,47 @@ public class DropItemsView extends GLSurfaceView {
         return this;
     }
 
+    public DropItemsView setDropInStartVelocity(float velocity) {
+        mStartDropInVelocity = velocity;
+        return this;
+    }
+
+    public DropItemsView setDropOutStartVelocity(float velocity) {
+        mStartDropOutVelocity = velocity;
+        return this;
+    }
+
+    public DropItemsView setAColor(float AColor) {
+        mAColor = AColor;
+        return this;
+    }
+
+    public DropItemsView setRColor(float RColor) {
+        mRColor = RColor;
+        return this;
+    }
+
+    public DropItemsView setGColor(float GColor) {
+        mGColor = GColor;
+        return this;
+    }
+
+    public DropItemsView setBColor(float BColor) {
+        mBColor = BColor;
+        return this;
+    }
+
+    public DropItemsView setARGBColors(float a, float r, float g, float b) {
+        setAColor(a);
+        setRColor(r);
+        setGColor(g);
+        setBColor(b);
+        if (!mInMotion) {
+            requestRender();
+        }
+        return this;
+    }
+
     //==============================================================================================
     //---------------------------------------Private methods----------------------------------------
     //==============================================================================================
@@ -228,7 +276,7 @@ public class DropItemsView extends GLSurfaceView {
         long minDelay = mDuration / mNumRows / 3;
         long maxDelay = mDuration / mNumRows / 2;
         for (int i = 0; i < mRowLength; i++) {
-            delayTimeList.add(randomLong(minDelay, maxDelay));
+            delayTimeList.add(0L);
         }
         mMaxDistance = 2f;
         float animTypeOffsetY;
@@ -274,7 +322,7 @@ public class DropItemsView extends GLSurfaceView {
             new Handler(Looper.getMainLooper())
                     .post(() -> {
                         if (mStartListener != null) {
-                            mStartListener.onAnimationStarted();
+                            mStartListener.onAnimationStarted(mDroppingOut ? DropType.DROP_OUT : DropType.DROP_IN);
                         }
                     });
         } else {
@@ -286,7 +334,7 @@ public class DropItemsView extends GLSurfaceView {
             new Handler(Looper.getMainLooper())
                     .post(() -> {
                         if (mEndListener != null) {
-                            mEndListener.onAnimationEnded();
+                            mEndListener.onAnimationEnded(mDroppingOut ? DropType.DROP_OUT : DropType.DROP_IN);
                         }
                     });
         }
@@ -340,7 +388,8 @@ public class DropItemsView extends GLSurfaceView {
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mBitmapArray[dropObject.getTextureId()]);
         }
         Matrix.setIdentityM(scratch, 0);
-        Matrix.multiplyMM(scratch, 0, mvpMatrix, 0, dropObject.getTranslationMat(mMaxDistance, mAcceleration, time), 0);
+        float startVelocity = mDroppingOut ? mStartDropOutVelocity : mStartDropInVelocity;
+        Matrix.multiplyMM(scratch, 0, mvpMatrix, 0, dropObject.getTranslationMat(mMaxDistance, mAcceleration, time, startVelocity), 0);
         Matrix.scaleM(scratch, 0, mObjectScale, mObjectScale, 1);
         Matrix.rotateM(scratch, 0, dropObject.getAngle(), 0, 0, -1);
         GLES20.glUniformMatrix4fv(uMVPMatrix, 1, false, scratch, 0);
@@ -397,14 +446,7 @@ public class DropItemsView extends GLSurfaceView {
         @Override
         public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
             Log.d(TAG, "onSurfaceCreated: ");
-            GLES20.glClearColor(0f, 0f, 0f, 0f);
-//            gl10.glDisable(GL10.GL_DITHER);
-//            gl10.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_FASTEST);
-
-//            gl10.glClearColor(0,0,0,0);
-//            gl10.glEnable(GL10.GL_CULL_FACE);
-////            gl10.glShadeModel(GL10.GL_SMOOTH);
-//            gl10.glEnable(GL10.GL_DEPTH_TEST);
+            GLES20.glClearColor(mRColor, mGColor, mBColor, mAColor);
 
             GLES20.glEnable(GL10.GL_BLEND);
             GLES20.glBlendFunc(GL10.GL_ONE, GL10.GL_ONE_MINUS_SRC_ALPHA);
@@ -445,6 +487,7 @@ public class DropItemsView extends GLSurfaceView {
 
         @Override
         public void onDrawFrame(GL10 gl10) {
+            GLES20.glClearColor(mRColor, mGColor, mBColor, mAColor);
             GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 
             if (!mDropObjectList.isEmpty() && positionBuffer != null) {
