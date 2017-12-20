@@ -363,9 +363,6 @@ public class DropItemsView extends GLSurfaceView {
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureIds[i]);
 
-            GLES20.glEnable(GL10.GL_BLEND);
-            GLES20.glBlendFunc(GL10.GL_ONE, GL10.GL_ONE_MINUS_SRC_ALPHA);
-
             GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
             GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
             GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
@@ -400,14 +397,17 @@ public class DropItemsView extends GLSurfaceView {
         @Override
         public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
             Log.d(TAG, "onSurfaceCreated: ");
-            //GLES20.glClearColor(1f, 1f, 1f, 0f);
-            gl10.glDisable(GL10.GL_DITHER);
-            gl10.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_FASTEST);
+            GLES20.glClearColor(0f, 0f, 0f, 0f);
+//            gl10.glDisable(GL10.GL_DITHER);
+//            gl10.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_FASTEST);
 
-            gl10.glClearColor(0,0,0,0);
-            gl10.glEnable(GL10.GL_CULL_FACE);
-            gl10.glShadeModel(GL10.GL_SMOOTH);
-            gl10.glEnable(GL10.GL_DEPTH_TEST);
+//            gl10.glClearColor(0,0,0,0);
+//            gl10.glEnable(GL10.GL_CULL_FACE);
+////            gl10.glShadeModel(GL10.GL_SMOOTH);
+//            gl10.glEnable(GL10.GL_DEPTH_TEST);
+
+            GLES20.glEnable(GL10.GL_BLEND);
+            GLES20.glBlendFunc(GL10.GL_ONE, GL10.GL_ONE_MINUS_SRC_ALPHA);
 
             // Then, we load the shaders into a program
             int iVShader, iFShader, iProgId;
