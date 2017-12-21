@@ -1,4 +1,4 @@
-package org.terenfear.dropanimation;
+package org.terenfear.dropanimation.enums;
 
 /**
  * Created with IntlliJ IDEA<br>
@@ -10,7 +10,7 @@ package org.terenfear.dropanimation;
  * Project name: TestDropAnimation<br>
  * ======================================================================================================================
  */
-public enum DropType {
+public enum AnimType {
     DROP_IN,
     DROP_OUT
 }

@@ -1,32 +1,24 @@
 package org.terenfear.dropanimation;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.PixelFormat;
-import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
-import android.opengl.GLUtils;
-import android.opengl.Matrix;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.SystemClock;
 import android.support.annotation.DrawableRes;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.ViewTreeObserver;
 
-import org.intellij.lang.annotations.Language;
+import org.terenfear.dropanimation.data.RendererData;
+import org.terenfear.dropanimation.enums.AnimType;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
-import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.opengles.GL10;
+import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 
 /**
  * Created with IntlliJ IDEA<br>
@@ -41,85 +33,22 @@ import javax.microedition.khronos.opengles.GL10;
 public class DropItemsView extends GLSurfaceView {
 
     public interface AnimStartListener {
-        void onAnimationStarted(DropType type);
+        void onAnimationStarted(AnimType type);
     }
 
-    public interface AnimEndListener {
-        void onAnimationEnded(DropType type);
+    public interface AnimFinishListener {
+        void onAnimationFinished(AnimType type);
     }
 
-    public static final String MVP_MATRIX = "uMVPMatrix";
-    public static final String POSITION = "vPosition";
-    public static final String TEXTURE_COORDINATE = "vTextureCoordinate";
+    private static final String TAG = DropItemsView.class.getSimpleName();
 
-    private static final float TEXTURE_COORDS[] = {
-            0, 1, // X1,Y1
-            1, 1, // X2,Y2
-            0, 0, // X3,Y3
-            1, 0, // X4,Y4
-    };
-    private FloatBuffer TEXTURE_COORDS_BUFFER = ByteBuffer
-            .allocateDirect(TEXTURE_COORDS.length * 4)
-            .order(ByteOrder.nativeOrder())
-            .asFloatBuffer()
-            .put(TEXTURE_COORDS);
-
-    @Language("GLSL")
-    private static final String VERTEX_SHADER = ""+
-            "precision mediump float;" +
-            "uniform mat4 " + MVP_MATRIX + ";" +
-            "attribute vec4 " + POSITION + ";" +
-            "attribute vec4 " + TEXTURE_COORDINATE + ";" +
-            "varying vec2 position;" +
-            "void main(){" +
-            " gl_Position = " + MVP_MATRIX + " * " + POSITION + ";" +
-            " position = " + TEXTURE_COORDINATE + ".xy;" +
-            "}";
-    @Language("GLSL")
-    private static final String FRAGMENT_SHADER = ""+
-            "precision mediump float;" +
-            "uniform sampler2D uTexture;" +
-            "varying vec2 position;" +
-            "void main() {" +
-            "    gl_FragColor = texture2D(uTexture, position);" +
-            "}";
-
-    // region Variables
-    private static final String TAG = "TEST";
-    private FloatBuffer positionBuffer;
-    private int vPosition;
-    private int vTexturePosition;
-    private int uMVPMatrix;
-    private float[] mvpMatrix = new float[16];
-    private float[] projectionMatrix = new float[16];
-    private float[] viewMatrix = new float[16];
-    private float[] scratch = new float[16];
-    private volatile List<DropObject> mDropObjectList = new ArrayList<>();
-    private float mMaxDistance = 2f;
-    private float mAcceleration;
-    private int mNumRows;
-    private float mObjectWH;
-    private boolean mDroppingOut = false;
-    private Random mRandom = new Random();
-    private int[] mBitmapArray;
-    private int mWidth;
-    private int mHeight;
-    private int[] mResourceIds;
     private AnimStartListener mStartListener;
-    private AnimEndListener mEndListener;
-    private boolean mInMotion = false;
-    private long mDuration = 2000;
-    private int mRowLength = 10;
-    private float mObjectScale = 1.9f;
-    private boolean mIsStop;
-    private float mStartDropInVelocity = 0;
-    private float mStartDropOutVelocity = 0;
+    private AnimFinishListener mFinishListener;
 
-    private float mAColor = 0f;
-    private float mRColor = 0f;
-    private float mGColor = 0f;
-    private float mBColor = 0f;
-    // endregion Variables
+    @NonNull
+    private DropItemsRenderer mRenderer;
+    @NonNull
+    private RendererData mRendererData = new RendererData();
 
     public DropItemsView(Context context) {
         super(context);
@@ -132,43 +61,32 @@ public class DropItemsView extends GLSurfaceView {
     }
 
     //==============================================================================================
+    //---------------------------------------Override methods---------------------------------------
+    //==============================================================================================
+
+    @Override
+    public void onResume() {
+        super.onResume();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+    }
+
+    //==============================================================================================
     //---------------------------------------Public methods-----------------------------------------
     //==============================================================================================
     public void stopAnimation(){
-        mDroppingOut = false;
-        mDropObjectList.clear();
-        initAnimationObjects();
-        mIsStop = true;
-        setObjectsInMotion(false);
+        queueEvent(() -> mRenderer.stopAnimation());
     }
 
     public void startDropIn() {
-        if (mInMotion) {
-            return;
-        }
-        Log.d(TAG, "startDropIn: ");
-        mIsStop = false;
-        mDroppingOut = false;
-        mDropObjectList.clear();
-        initAnimationObjects();
-
-        setObjectsInMotion(true);
+        queueEvent(() -> mRenderer.startDropIn());
     }
 
     public void startDropOut() {
-        if (mInMotion) {
-            return;
-        }
-        mIsStop = false;
-        mDroppingOut = true;
-        if (mDropObjectList.isEmpty()) {
-            initAnimationObjects();
-        } else {
-            float excessiveHeight = (mNumRows * mObjectWH - 2) * mObjectScale;
-            mMaxDistance = 2 + excessiveHeight * 1.1f;
-        }
-
-        setObjectsInMotion(true);
+        queueEvent(() -> mRenderer.startDropOut());
     }
 
     public DropItemsView setStartListener(AnimStartListener startListener) {
@@ -176,69 +94,82 @@ public class DropItemsView extends GLSurfaceView {
         return this;
     }
 
-    public DropItemsView setEndListener(AnimEndListener endListener) {
-        mEndListener = endListener;
+    public DropItemsView setFinishListener(AnimFinishListener finishListener) {
+        mFinishListener = finishListener;
         return this;
     }
 
     public DropItemsView setDuration(long duration) {
-        mDuration = duration;
+        mRendererData.setDuration(duration);
+        mRenderer.setRendererData(mRendererData);
         return this;
     }
 
     public DropItemsView setRowLength(int rowLength) {
-        mRowLength = rowLength;
+        mRendererData.setRowLength(rowLength);
+        mRenderer.setRendererData(mRendererData);
         return this;
     }
 
     public DropItemsView setObjectScale(float objectScale) {
-        mObjectScale = objectScale;
+        mRendererData.setObjectScale(objectScale);
+        mRenderer.setRendererData(mRendererData);
         return this;
     }
 
     public DropItemsView setResourceIds(@DrawableRes int... resourceIds) {
-        mResourceIds = resourceIds;
+        mRendererData.setResourceIds(resourceIds);
+        mRenderer.setRendererData(mRendererData);
         return this;
     }
 
-    public DropItemsView setDropInStartVelocity(float velocity) {
-        mStartDropInVelocity = velocity;
+    public DropItemsView setStartDropInVelocity(float velocity) {
+        mRendererData.setStartDropInVelocity(velocity);
+        mRenderer.setRendererData(mRendererData);
         return this;
     }
 
-    public DropItemsView setDropOutStartVelocity(float velocity) {
-        mStartDropOutVelocity = velocity;
+    public DropItemsView setStartDropOutVelocity(float velocity) {
+        mRendererData.setStartDropOutVelocity(velocity);
+        mRenderer.setRendererData(mRendererData);
         return this;
     }
 
-    public DropItemsView setAColor(float AColor) {
-        mAColor = AColor;
+    public DropItemsView setAColor(float aColor) {
+        mRendererData.setAColor(aColor);
+        mRenderer.setRendererData(mRendererData);
+        requestRender();
         return this;
     }
 
-    public DropItemsView setRColor(float RColor) {
-        mRColor = RColor;
+    public DropItemsView setRColor(float rColor) {
+        mRendererData.setRColor(rColor);
+        mRenderer.setRendererData(mRendererData);
+        requestRender();
         return this;
     }
 
-    public DropItemsView setGColor(float GColor) {
-        mGColor = GColor;
+    public DropItemsView setGColor(float gColor) {
+        mRendererData.setGColor(gColor);
+        mRenderer.setRendererData(mRendererData);
+        requestRender();
         return this;
     }
 
-    public DropItemsView setBColor(float BColor) {
-        mBColor = BColor;
+    public DropItemsView setBColor(float bColor) {
+        mRendererData.setBColor(bColor);
+        mRenderer.setRendererData(mRendererData);
+        requestRender();
         return this;
     }
 
     public DropItemsView setARGBColors(float a, float r, float g, float b) {
-        setAColor(a);
-        setRColor(r);
-        setGColor(g);
-        setBColor(b);
-        if (!mInMotion) {
-            requestRender();
-        }
+        mRendererData.setAColor(a);
+        mRendererData.setRColor(r);
+        mRendererData.setGColor(g);
+        mRendererData.setBColor(b);
+        mRenderer.setRendererData(mRendererData);
+        requestRender();
         return this;
     }
 
@@ -247,7 +178,9 @@ public class DropItemsView extends GLSurfaceView {
     //==============================================================================================
 
     private void init() {
-        Log.d(TAG, "init: " + Thread.currentThread().getId());
+        mRenderer = new DropItemsRenderer(getResources());
+        mRenderer.setCallback(mRendererCallback);
+
         setZOrderOnTop(true);
         setPreserveEGLContextOnPause(true);
         setEGLContextClientVersion(2);
@@ -255,276 +188,48 @@ public class DropItemsView extends GLSurfaceView {
         setRenderer(mRenderer);
         setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         getHolder().setFormat(PixelFormat.TRANSLUCENT);
-
-        getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                mWidth = getWidth();
-                mHeight = getHeight();
-            }
-        });
-
     }
+//==============================================================================================
+//---------------------------------------Inner classes------------------------------------------
+//==============================================================================================
 
-    private void initAnimationObjects() {
-        mObjectWH = calcObjectWidthHeight(mWidth, mHeight, mRowLength);
-        positionBuffer = createVertexBuffer(mObjectWH);
+    private DropItemsRenderer.RendererCallback mRendererCallback = new DropItemsRenderer.RendererCallback() {
+        @Override
+        public void requestRedraw() {
+            requestRender();
+        }
 
-        List<Long> delayTimeList = new ArrayList<>();
-        mNumRows = Math.round(2 / mObjectWH) + 1;
-        long minDelay = mDuration / mNumRows / 3;
-        long maxDelay = mDuration / mNumRows / 2;
-        for (int i = 0; i < mRowLength; i++) {
-            delayTimeList.add(0L);
+        @Override
+        public void requestDirtyRendering() {
+            setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         }
-        mMaxDistance = 2f;
-        float animTypeOffsetY;
-        if (mDroppingOut) {
-            float excessiveHeight = (mNumRows * mObjectWH - 2) * mObjectScale;
-            mMaxDistance += excessiveHeight * 1.1f;
-            animTypeOffsetY = -2;
-        } else {
-            animTypeOffsetY = mObjectWH / 2 * mObjectScale;
-            mMaxDistance +=animTypeOffsetY;
-        }
-        float offsetY;
-        long delay;
-        for (int i = 0; i < mNumRows; i++) {
-            offsetY = mObjectWH * i + animTypeOffsetY;
-            for (int j = 0; j < mRowLength; j++) {
-                delay = delayTimeList.get(j);
-                delay += randomLong(minDelay, maxDelay);
-                int textureId = mRandom.nextInt(mResourceIds.length);
-                mDropObjectList.add(new DropObject(mObjectWH, textureId, offsetY, delay));
-                delayTimeList.set(j, delay);
-            }
-        }
-        mAcceleration = (float) (2 * mMaxDistance / Math.pow(mDuration / 2, 2));
-    }
 
-    private long randomLong(long min, long max) {
-        return (long) (min + mRandom.nextDouble() * (max - min));
-    }
+        @Override
+        public void requestContiniousRendering() {
+            setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
 
-    private void setObjectsInMotion(boolean inMotion) {
-        mInMotion = inMotion;
-        for (DropObject obj : mDropObjectList) {
-            obj.setInMotion(inMotion);
         }
-        if (inMotion) {
-            if (mDroppingOut) {
-                for (DropObject obj : mDropObjectList) {
-                    obj.resetTraveled();
-                }
-            }
-            setRenderMode(RENDERMODE_CONTINUOUSLY);
-            new Handler(Looper.getMainLooper())
-                    .post(() -> {
+
+        @Override
+        public void onAnimationStarted(AnimType animType) {
+            Observable.just(animType)
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(type -> {
                         if (mStartListener != null) {
-                            mStartListener.onAnimationStarted(mDroppingOut ? DropType.DROP_OUT : DropType.DROP_IN);
-                        }
-                    });
-        } else {
-            Log.d(TAG, "setObjectsInMotion: acc = " + mAcceleration);
-            if (mDroppingOut) {
-                mDropObjectList.clear();
-            }
-            setRenderMode(RENDERMODE_WHEN_DIRTY);
-            new Handler(Looper.getMainLooper())
-                    .post(() -> {
-                        if (mEndListener != null) {
-                            mEndListener.onAnimationEnded(mDroppingOut ? DropType.DROP_OUT : DropType.DROP_IN);
+                            mStartListener.onAnimationStarted(type);
                         }
                     });
         }
-    }
-
-    private float calcObjectWidthHeight(int width, int height, int numItems) {
-        float ratio = (float) width / height;
-        if (ratio < 1) {
-            ratio = 1 / ratio;
-        }
-        float numInPlane = numItems / ratio;
-        return (float) 2 / numInPlane;
-    }
-
-    private FloatBuffer createVertexBuffer(float objWH) {
-        float half = objWH / 2;
-        float[] posMatrix = {
-                -half, -half, 1,  // X1,Y1,Z1
-                half, -half, 1,   // X2,Y2,Z2
-                -half,  half, 1,  // X3,Y3,Z3
-                half,  half, 1    // X4,Y4,Z4
-        };
-        return ByteBuffer.allocateDirect(posMatrix.length * 4)
-                .order(ByteOrder.nativeOrder())
-                .asFloatBuffer()
-                .put(posMatrix);
-    }
-
-    private void drawAllObjects() {
-        long time = SystemClock.uptimeMillis();
-        if( mDropObjectList.isEmpty() ){
-            return;
-        }
-        boolean inMotion = false;
-        for (int i = 0; i < mNumRows; i++) {
-            for (int j = 0; j < mRowLength; j++) {
-                DropObject obj = mDropObjectList.get(i * mRowLength + j);
-                drawOneObject(obj, time);
-                inMotion = inMotion || obj.isInMotion();
-                Matrix.translateM(mvpMatrix, 0, mObjectWH, 0, 0);
-            }
-            Matrix.translateM(mvpMatrix, 0, -mObjectWH * mRowLength, 0, 0);
-        }
-        if (!inMotion) {
-            setObjectsInMotion(false);
-        }
-    }
-
-    private void drawOneObject(DropObject dropObject, long time) {
-        if (mBitmapArray != null && mBitmapArray.length != 0) {
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mBitmapArray[dropObject.getTextureId()]);
-        }
-        Matrix.setIdentityM(scratch, 0);
-        float startVelocity = mDroppingOut ? mStartDropOutVelocity : mStartDropInVelocity;
-        Matrix.multiplyMM(scratch, 0, mvpMatrix, 0, dropObject.getTranslationMat(mMaxDistance, mAcceleration, time, startVelocity), 0);
-        Matrix.scaleM(scratch, 0, mObjectScale, mObjectScale, 1);
-        Matrix.rotateM(scratch, 0, dropObject.getAngle(), 0, 0, -1);
-        GLES20.glUniformMatrix4fv(uMVPMatrix, 1, false, scratch, 0);
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-    }
-
-    private int[] loadTextureArrayFromRes(@DrawableRes int... resourceIds) {
-        Log.d(TAG, "loadTextureArrayFromRes: " + Thread.currentThread().getId());
-        final int[] textureIds = new int[resourceIds.length];
-        GLES20.glGenTextures(resourceIds.length, textureIds, 0);
-        if (textureIds[0] == 0) {
-            Log.d("Test", "loadTextureArrayFromRes: " +
-                    GLUtils.getEGLErrorString(GLES20.glGetError()));
-            return new int[] {0};
-        }
-        final BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inScaled = false;
-        for (int i = 0; i < resourceIds.length; i++) {
-            Bitmap bitmap = BitmapFactory.decodeResource(getResources(), resourceIds[i], options);
-            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureIds[i]);
-
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
-            bitmap.recycle();
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
-        }
-        return textureIds;
-    }
-
-    private int loadShader(final String strSource, final int iType) {
-        int[] compiled = new int[1];
-        int iShader = GLES20.glCreateShader(iType);
-        GLES20.glShaderSource(iShader, strSource);
-        GLES20.glCompileShader(iShader);
-        GLES20.glGetShaderiv(iShader, GLES20.GL_COMPILE_STATUS, compiled, 0);
-        if (compiled[0] == 0) {
-            throw new RuntimeException("Compilation failed : " + GLES20.glGetShaderInfoLog(iShader));
-        }
-        return iShader;
-    }
-
-    //==============================================================================================
-    //---------------------------------------Inner classes------------------------------------------
-    //==============================================================================================
-
-    private GLSurfaceView.Renderer mRenderer = new Renderer() {
-
-    //==============================================================================================
-    //---------------------------------------Override methods---------------------------------------
-    //==============================================================================================
 
         @Override
-        public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
-            Log.d(TAG, "onSurfaceCreated: ");
-            GLES20.glClearColor(mRColor, mGColor, mBColor, mAColor);
-
-            GLES20.glEnable(GL10.GL_BLEND);
-            GLES20.glBlendFunc(GL10.GL_ONE, GL10.GL_ONE_MINUS_SRC_ALPHA);
-
-            // Then, we load the shaders into a program
-            int iVShader, iFShader, iProgId;
-            int[] link = new int[1];
-            iVShader = loadShader(VERTEX_SHADER, GLES20.GL_VERTEX_SHADER);
-            iFShader = loadShader(FRAGMENT_SHADER, GLES20.GL_FRAGMENT_SHADER);
-
-            iProgId = GLES20.glCreateProgram();
-            GLES20.glAttachShader(iProgId, iVShader);
-            GLES20.glAttachShader(iProgId, iFShader);
-            GLES20.glLinkProgram(iProgId);
-
-            GLES20.glGetProgramiv(iProgId, GLES20.GL_LINK_STATUS, link, 0);
-            if (link[0] <= 0) {
-                throw new RuntimeException("Program couldn't be loaded");
-            }
-            GLES20.glDeleteShader(iVShader);
-            GLES20.glDeleteShader(iFShader);
-            GLES20.glUseProgram(iProgId);
-
-            // Now that our program is loaded and in use, we'll retrieve the handles of the parameters
-            // we pass to our shaders
-            vPosition = GLES20.glGetAttribLocation(iProgId, POSITION);
-            vTexturePosition = GLES20.glGetAttribLocation(iProgId, TEXTURE_COORDINATE);
-            uMVPMatrix = GLES20.glGetUniformLocation(iProgId, MVP_MATRIX);
-        }
-
-        @Override
-        public void onSurfaceChanged(GL10 gl10, int width, int height) {
-            Log.d(TAG, "onSurfaceChanged: ");
-            GLES20.glViewport(0, 0, width, height);
-            float screenRatio = (float) width / height;
-            Matrix.orthoM(projectionMatrix, 0, -screenRatio, screenRatio, -1, 1, 3, 7);
-        }
-
-        @Override
-        public void onDrawFrame(GL10 gl10) {
-            GLES20.glClearColor(mRColor, mGColor, mBColor, mAColor);
-            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
-
-            if (!mDropObjectList.isEmpty() && positionBuffer != null) {
-
-                if (mBitmapArray == null && mResourceIds != null) {
-                    mBitmapArray = loadTextureArrayFromRes(mResourceIds);
-                }
-
-                Matrix.setIdentityM(mvpMatrix, 0);
-                Matrix.setIdentityM(scratch, 0);
-
-                Matrix.setLookAtM(viewMatrix, 0, 0, 0, 7, 0, 0, -1, 0, 1, 0);
-                Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
-
-                Matrix.translateM(mvpMatrix, 0, (mObjectWH - (mRowLength * mObjectWH)) / 2f, 1 + mObjectWH / 2, 0);
-
-                positionBuffer.position(0);
-                GLES20.glVertexAttribPointer(vPosition, 3, GLES20.GL_FLOAT, false, 0, positionBuffer);
-                GLES20.glEnableVertexAttribArray(vPosition);
-
-                // We pass the buffer for the texture position
-                TEXTURE_COORDS_BUFFER.position(0);
-                GLES20.glVertexAttribPointer(vTexturePosition, 2, GLES20.GL_FLOAT, false, 0, TEXTURE_COORDS_BUFFER);
-                GLES20.glEnableVertexAttribArray(vTexturePosition);
-
-                if( !mIsStop ){
-                    try{
-                        drawAllObjects();
-                    } catch (Throwable throwable){
-                        throwable.printStackTrace();
-                    }
-                }
-
-                GLES20.glDisableVertexAttribArray(vPosition);
-                GLES20.glDisableVertexAttribArray(vTexturePosition);
-            }
+        public void onAnimationFinished(AnimType animType) {
+            Observable.just(animType)
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(type -> {
+                        if (mFinishListener != null) {
+                            mFinishListener.onAnimationFinished(type);
+                        }
+                    });
         }
     };
-
 }
