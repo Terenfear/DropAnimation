@@ -1,5 +1,6 @@
 package org.test.terenfear.testdropanimation;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentTransaction;
@@ -36,15 +37,15 @@ public class MainActivity extends AppCompatActivity {
                 .setDuration(2500)
                 .setObjectScale(1.9f)
                 .setRowLength(20)
-                .setARGBColors(0.5f, 1f, 1f, 0f)
+                .setARGBColors("#6fffff00")
                 .setResourceIds(RESOURCES_ID_ARRAY)
                 .setStartListener(type -> {
                     Log.d(TAG, "anim start: " + type.name());
-                    mDropItemsView.setARGBColors(0.5f, 0f, 0f, 1f);
+                    mDropItemsView.setARGBColors("#6f00ff00");
                 })
                 .setFinishListener(type -> {
                     Log.d(TAG, "anim end: " + type.name());
-                    mDropItemsView.setARGBColors(0.5f, 1f, 0f, 0f);
+                    mDropItemsView.setARGBColors("#6fff0000");
                 });
 
         findViewById(R.id.vBtnStop).setOnClickListener(view -> mDropItemsView.stopAnimation());

@@ -1,11 +1,8 @@
 package org.terenfear.dropanimation;
 
 import android.opengl.Matrix;
-import android.os.SystemClock;
-import android.util.Log;
 
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Created with IntlliJ IDEA<br>
@@ -39,11 +36,11 @@ public class DropObject {
         mAngle = random.nextFloat() * 360;
     }
 
-    public float getTraveledDistance(float maxDistance, float acceleration, long currentTime) {
-        return this.getTraveledDistance(maxDistance, acceleration, currentTime, 0);
+    public float travel(float maxDistance, float acceleration, long currentTime) {
+        return this.travel(maxDistance, acceleration, currentTime, 0);
     }
 
-    public float getTraveledDistance(float maxDistance, float acceleration, long currentTime, float startVelocity) {
+    public float travel(float maxDistance, float acceleration, long currentTime, float startVelocity) {
         if (mInMotion) {
             if (mStartTime == 0) {
                 mStartTime = currentTime;
@@ -72,7 +69,7 @@ public class DropObject {
 
     public float[] getTranslationMat(float maxDistance, float acceleration, long currentTime, float startVelocity) {
         Matrix.setIdentityM(mTranslationMat, 0);
-        Matrix.translateM(mTranslationMat, 0, 0, mOffsetY - getTraveledDistance(maxDistance, acceleration, currentTime, startVelocity), mOffsetZ);
+        Matrix.translateM(mTranslationMat, 0, 0, mOffsetY - travel(maxDistance, acceleration, currentTime, startVelocity), mOffsetZ);
         return mTranslationMat;
     }
 

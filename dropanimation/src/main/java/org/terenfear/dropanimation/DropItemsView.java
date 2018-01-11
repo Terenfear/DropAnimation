@@ -1,11 +1,13 @@
 package org.terenfear.dropanimation;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.graphics.ColorUtils;
 import android.util.AttributeSet;
 import android.view.ViewTreeObserver;
 
@@ -168,6 +170,17 @@ public class DropItemsView extends GLSurfaceView {
         mRendererData.setRColor(r);
         mRendererData.setGColor(g);
         mRendererData.setBColor(b);
+        mRenderer.setRendererData(mRendererData);
+        requestRender();
+        return this;
+    }
+
+    public DropItemsView setARGBColors(@NonNull String colorString) {
+        int color = Color.parseColor(colorString);
+        mRendererData.setAColor(Color.alpha(color) / 255f);
+        mRendererData.setRColor(Color.red(color) / 255f);
+        mRendererData.setGColor(Color.green(color) / 255f);
+        mRendererData.setBColor(Color.blue(color) / 255f);
         mRenderer.setRendererData(mRendererData);
         requestRender();
         return this;
