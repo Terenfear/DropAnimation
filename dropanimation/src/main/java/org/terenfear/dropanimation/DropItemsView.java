@@ -6,21 +6,13 @@ import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.graphics.ColorUtils;
 import android.util.AttributeSet;
-import android.view.ViewTreeObserver;
 
 import org.terenfear.dropanimation.data.RendererData;
 import org.terenfear.dropanimation.enums.AnimType;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
 
 /**
  * Created with IntlliJ IDEA<br>
@@ -52,28 +44,16 @@ public class DropItemsView extends GLSurfaceView {
     @NonNull
     private RendererData mRendererData = new RendererData();
 
-    public DropItemsView(Context context) {
-        super(context);
-        init();
-    }
-
     public DropItemsView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        mRenderer = new DropItemsRenderer(getResources());
         init();
     }
 
-    //==============================================================================================
-    //---------------------------------------Override methods---------------------------------------
-    //==============================================================================================
-
-    @Override
-    public void onResume() {
-        super.onResume();
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
+    public DropItemsView(Context context) {
+        super(context);
+        mRenderer = new DropItemsRenderer(getResources());
+        init();
     }
 
     //==============================================================================================
@@ -138,38 +118,38 @@ public class DropItemsView extends GLSurfaceView {
     }
 
     public DropItemsView setAColor(float aColor) {
-        mRendererData.setAColor(aColor);
+        mRendererData.setAlphaColor(aColor);
         mRenderer.setRendererData(mRendererData);
         requestRender();
         return this;
     }
 
     public DropItemsView setRColor(float rColor) {
-        mRendererData.setRColor(rColor);
+        mRendererData.setRedValue(rColor);
         mRenderer.setRendererData(mRendererData);
         requestRender();
         return this;
     }
 
     public DropItemsView setGColor(float gColor) {
-        mRendererData.setGColor(gColor);
+        mRendererData.setGreenValue(gColor);
         mRenderer.setRendererData(mRendererData);
         requestRender();
         return this;
     }
 
     public DropItemsView setBColor(float bColor) {
-        mRendererData.setBColor(bColor);
+        mRendererData.setBlueValue(bColor);
         mRenderer.setRendererData(mRendererData);
         requestRender();
         return this;
     }
 
     public DropItemsView setARGBColors(float a, float r, float g, float b) {
-        mRendererData.setAColor(a);
-        mRendererData.setRColor(r);
-        mRendererData.setGColor(g);
-        mRendererData.setBColor(b);
+        mRendererData.setAlphaColor(a);
+        mRendererData.setRedValue(r);
+        mRendererData.setGreenValue(g);
+        mRendererData.setBlueValue(b);
         mRenderer.setRendererData(mRendererData);
         requestRender();
         return this;
@@ -177,10 +157,10 @@ public class DropItemsView extends GLSurfaceView {
 
     public DropItemsView setARGBColors(@NonNull String colorString) {
         int color = Color.parseColor(colorString);
-        mRendererData.setAColor(Color.alpha(color) / 255f);
-        mRendererData.setRColor(Color.red(color) / 255f);
-        mRendererData.setGColor(Color.green(color) / 255f);
-        mRendererData.setBColor(Color.blue(color) / 255f);
+        mRendererData.setAlphaColor(Color.alpha(color) / 255f);
+        mRendererData.setRedValue(Color.red(color) / 255f);
+        mRendererData.setGreenValue(Color.green(color) / 255f);
+        mRendererData.setBlueValue(Color.blue(color) / 255f);
         mRenderer.setRendererData(mRendererData);
         requestRender();
         return this;
@@ -191,7 +171,6 @@ public class DropItemsView extends GLSurfaceView {
     //==============================================================================================
 
     private void init() {
-        mRenderer = new DropItemsRenderer(getResources());
         mRenderer.setCallback(mRendererCallback);
 
         setZOrderOnTop(true);
@@ -202,9 +181,10 @@ public class DropItemsView extends GLSurfaceView {
         setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         getHolder().setFormat(PixelFormat.TRANSLUCENT);
     }
-//==============================================================================================
-//---------------------------------------Inner classes------------------------------------------
-//==============================================================================================
+
+    //==============================================================================================
+    //---------------------------------------Inner classes------------------------------------------
+    //==============================================================================================
 
     private DropItemsRenderer.RendererCallback mRendererCallback = new DropItemsRenderer.RendererCallback() {
         @Override

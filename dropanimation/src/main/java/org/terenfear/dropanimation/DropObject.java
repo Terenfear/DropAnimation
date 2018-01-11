@@ -50,12 +50,10 @@ public class DropObject {
                 if (traveledTime >= mDelayTime) {
                     if (mTraveledDistance < maxDistance) {
                         long tempTime = traveledTime - mDelayTime;
-                        mTraveledDistance = (float) ( startVelocity * tempTime + acceleration * Math.pow(tempTime, 2) / 2);
+                        float tempDistance = (float) ( startVelocity * tempTime + acceleration * Math.pow(tempTime, 2) / 2);
+                        mTraveledDistance = Math.min(tempDistance, maxDistance);
                     } else {
                         mInMotion = false;
-                    }
-                    if (mTraveledDistance > maxDistance) {
-                        mTraveledDistance = maxDistance;
                     }
                 }
             }

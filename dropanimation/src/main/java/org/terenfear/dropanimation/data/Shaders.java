@@ -14,7 +14,7 @@ import org.intellij.lang.annotations.Language;
  */
 public class Shaders {
 
-    public static final float TEXTURE_COORDS[] = {
+    public static final float[] TEXTURE_COORDS = {
             0, 1,
             1, 1,
             0, 0,
@@ -44,4 +44,8 @@ public class Shaders {
             "void main() {" +
             "    gl_FragColor = texture2D(uTexture, position);" +
             "}";
+
+    private Shaders() {
+        throw new IllegalStateException("Constants' holder");
+    }
 }

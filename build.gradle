@@ -8,8 +8,16 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.0.1'
+        classpath 'org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:2.6'
 
     }
+}
+
+apply plugin: 'org.sonarqube'
+
+ext {
+    versionCode = 3
+    versionName = '1.0.2'
 }
 
 allprojects {
@@ -17,8 +25,28 @@ allprojects {
         google()
         jcenter()
     }
+    sonarqube {
+        properties {
+            property 'sonar.projectName', 'DropAnimation'
+            property 'sonar.projectKey', 'DropAnimation'
+            property 'sonar.host.url', getProps('sonar.host')
+            property 'sonar.login', getProps('sonar.login')
+            property 'sonar.projectVersion', versionName
+        }
+    }
 }
 
 task clean(type: Delete) {
     delete rootProject.buildDir
+}
+
+def getProps(String propName) {
+    def propsFile = rootProject.file('local.properties')
+    if (propsFile.exists()) {
+        def props = new Properties()
+        props.load(new FileInputStream(propsFile))
+        return props[propName]
+    } else {
+        return ''
+    }
 }

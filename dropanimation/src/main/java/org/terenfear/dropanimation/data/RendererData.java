@@ -2,11 +2,6 @@ package org.terenfear.dropanimation.data;
 
 import android.support.annotation.Nullable;
 
-import org.terenfear.dropanimation.DropObject;
-
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Created with IntlliJ IDEA<br>
  * User: Pavel Kozlovich <br>
@@ -18,10 +13,10 @@ import java.util.List;
  * ======================================================================================================================
  */
 public class RendererData {
-    private float mAColor = 0f;
-    private float mRColor = 0f;
-    private float mGColor = 0f;
-    private float mBColor = 0f;
+    private float mAlphaValue = 0f;
+    private float mRedValue = 0f;
+    private float mGreenValue = 0f;
+    private float mBlueValue = 0f;
 
     @Nullable
     private int[] mResourceIds;
@@ -32,36 +27,36 @@ public class RendererData {
     private float mStartDropInVelocity = 0;
     private float mStartDropOutVelocity = 0;
 
-    public synchronized float getAColor() {
-        return mAColor;
+    public synchronized float getAlphaValue() {
+        return mAlphaValue;
     }
 
-    public synchronized void setAColor(float AColor) {
-        mAColor = AColor;
+    public synchronized void setAlphaColor(float alphaColor) {
+        mAlphaValue = alphaColor;
     }
 
-    public synchronized float getRColor() {
-        return mRColor;
+    public synchronized float getRedValue() {
+        return mRedValue;
     }
 
-    public synchronized void setRColor(float RColor) {
-        mRColor = RColor;
+    public synchronized void setRedValue(float redValue) {
+        mRedValue = redValue;
     }
 
-    public synchronized float getGColor() {
-        return mGColor;
+    public synchronized float getGreenValue() {
+        return mGreenValue;
     }
 
-    public synchronized void setGColor(float GColor) {
-        mGColor = GColor;
+    public synchronized void setGreenValue(float greenValue) {
+        mGreenValue = greenValue;
     }
 
-    public synchronized float getBColor() {
-        return mBColor;
+    public synchronized float getBlueValue() {
+        return mBlueValue;
     }
 
-    public synchronized void setBColor(float BColor) {
-        mBColor = BColor;
+    public synchronized void setBlueValue(float blueValue) {
+        mBlueValue = blueValue;
     }
 
     @Nullable
@@ -114,9 +109,9 @@ public class RendererData {
     }
 
     public synchronized void setARGB(float a, float r, float g, float b) {
-        setAColor(a);
-        setRColor(r);
-        setGColor(g);
-        setBColor(b);
+        setAlphaColor(a);
+        setRedValue(r);
+        setGreenValue(g);
+        setBlueValue(b);
     }
 }

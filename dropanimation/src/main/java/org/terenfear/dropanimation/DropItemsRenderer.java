@@ -106,19 +106,21 @@ public class DropItemsRenderer implements GLSurfaceView.Renderer {
     //==============================================================================================
     @Override
     public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
-        if (mRendererData.getAColor() == 0) {
+        if (mRendererData.getAlphaValue() == 0) {
             GLES20.glClearColor(0, 0, 0, 0);
         } else {
-            GLES20.glClearColor(mRendererData.getRColor(),
-                    mRendererData.getGColor(),
-                    mRendererData.getBColor(),
-                    mRendererData.getAColor());
+            GLES20.glClearColor(mRendererData.getRedValue(),
+                    mRendererData.getGreenValue(),
+                    mRendererData.getBlueValue(),
+                    mRendererData.getAlphaValue());
         }
 
         GLES20.glEnable(GL10.GL_BLEND);
         GLES20.glBlendFunc(GL10.GL_ONE, GL10.GL_ONE_MINUS_SRC_ALPHA);
 
-        int iVShader, iFShader, iProgId;
+        int iVShader;
+        int iFShader;
+        int iProgId;
         int[] link = new int[1];
         iVShader = loadShader(Shaders.VERTEX_SHADER, GLES20.GL_VERTEX_SHADER);
         iFShader = loadShader(Shaders.FRAGMENT_SHADER, GLES20.GL_FRAGMENT_SHADER);
@@ -155,13 +157,13 @@ public class DropItemsRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onDrawFrame(GL10 gl10) {
-        if (mRendererData.getAColor() == 0) {
+        if (mRendererData.getAlphaValue() == 0) {
             GLES20.glClearColor(0, 0, 0, 0);
         } else {
-            GLES20.glClearColor(mRendererData.getRColor(),
-                    mRendererData.getGColor(),
-                    mRendererData.getBColor(),
-                    mRendererData.getAColor());
+            GLES20.glClearColor(mRendererData.getRedValue(),
+                    mRendererData.getGreenValue(),
+                    mRendererData.getBlueValue(),
+                    mRendererData.getAlphaValue());
         }
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 
@@ -193,8 +195,8 @@ public class DropItemsRenderer implements GLSurfaceView.Renderer {
             if( !mIsStop ){
                 try{
                     drawAllObjects();
-                } catch (Throwable throwable){
-                    throwable.printStackTrace();
+                } catch (Exception e){
+                    Log.e(TAG, "onDrawFrame: ", e);
                 }
             }
 
@@ -246,7 +248,7 @@ public class DropItemsRenderer implements GLSurfaceView.Renderer {
         mCurrentAnimType = AnimType.DROP_IN;
         mDropObjectList.clear();
         initObjects();
-        mAcceleration = (float) (2 * mMaxDistance / Math.pow(mRendererData.getDuration() / 2, 2));
+        mAcceleration = (float) (2 * mMaxDistance / Math.pow(mRendererData.getDuration() / 2d, 2));
 
         setObjectsInMotion(true);
     }
@@ -263,7 +265,7 @@ public class DropItemsRenderer implements GLSurfaceView.Renderer {
             float excessiveHeight = (mNumRows * mObjectWH - 2) * mRendererData.getObjectScale();
             mMaxDistance = 2 + excessiveHeight * 1.1f;
         }
-        mAcceleration = (float) (2 * mMaxDistance / Math.pow(mRendererData.getDuration() / 2, 2));
+        mAcceleration = (float) (2 * mMaxDistance / Math.pow(mRendererData.getDuration() / 2d, 2));
 
         setObjectsInMotion(true);
     }
