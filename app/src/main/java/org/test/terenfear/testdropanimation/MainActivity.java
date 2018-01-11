@@ -34,18 +34,18 @@ public class MainActivity extends AppCompatActivity {
         mDropItemsView
                 .setStartDropInVelocity(0.005f)
                 .setStartDropOutVelocity(0.005f)
-                .setDuration(2500)
+                .setDuration(1000)
                 .setObjectScale(1.9f)
                 .setRowLength(20)
-                .setARGBColors("#6fffff00")
+                .setARGBColors("#00000000")
                 .setResourceIds(RESOURCES_ID_ARRAY)
                 .setStartListener(type -> {
                     Log.d(TAG, "anim start: " + type.name());
-                    mDropItemsView.setARGBColors("#6f00ff00");
+                    mDropItemsView.setARGBColors(1f, 1f, 0f, 0f);
                 })
                 .setFinishListener(type -> {
                     Log.d(TAG, "anim end: " + type.name());
-                    mDropItemsView.setARGBColors("#6fff0000");
+                    mDropItemsView.setARGBColors("#00000000");
                 });
 
         findViewById(R.id.vBtnStop).setOnClickListener(view -> mDropItemsView.stopAnimation());

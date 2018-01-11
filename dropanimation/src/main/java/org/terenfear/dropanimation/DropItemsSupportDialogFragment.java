@@ -27,10 +27,16 @@ public class DropItemsSupportDialogFragment extends DialogFragment {
     public static final String KEY_ANIMATION_DURATION = "animation_duration";
     public static final String KEY_ROW_LENGTH = "row_length";
     public static final String KEY_OBJECT_SCALE = "obj_scale";
+    public static final String KEY_START_DROP_IN_VELOCITY = "start_drop_in_velocity";
+    public static final String KEY_START_DROP_OUT_VELOCITY = "start_drop_out_velocity";
+    public static final String KEY_BACKGROUND_COLOR = "background_color";
 
     private static final int DEFAULT_ROW_LENGTH = 20;
-    private static final long DEFAULT_DURATION = TimeUnit.SECONDS.toMillis(3);
+    private static final long DEFAULT_DURATION = TimeUnit.SECONDS.toMillis(1);
     private static final float DEFAULT_OBJECT_SCALE = 1.9f;
+    private static final float DEFAULT_START_DROP_IN_VELOCITY = 0.005f;
+    private static final float DEFAULT_START_DROP_OUT_VELOCITY = 0.005f;
+    private static final String DEFAULT_BACKGROUND_COLOR = "#00000000";
 
     private static final String TAG = DropItemsSupportDialogFragment.class.getSimpleName();
 
@@ -79,9 +85,15 @@ public class DropItemsSupportDialogFragment extends DialogFragment {
             long duration = getArguments().getLong(KEY_ANIMATION_DURATION, DEFAULT_DURATION);
             int rowLength = getArguments().getInt(KEY_ROW_LENGTH, DEFAULT_ROW_LENGTH);
             float objectScale = getArguments().getFloat(KEY_OBJECT_SCALE, DEFAULT_OBJECT_SCALE);
+            float startDropInVel = getArguments().getFloat(KEY_START_DROP_IN_VELOCITY, DEFAULT_START_DROP_IN_VELOCITY);
+            float startDropOutVel = getArguments().getFloat(KEY_START_DROP_OUT_VELOCITY, DEFAULT_START_DROP_OUT_VELOCITY);
+            String backgroundColor = getArguments().getString(KEY_BACKGROUND_COLOR, DEFAULT_BACKGROUND_COLOR);
             mDropItemsView
+                    .setStartDropInVelocity(startDropInVel)
+                    .setStartDropOutVelocity(startDropOutVel)
                     .setDuration(duration)
                     .setRowLength(rowLength)
+                    .setARGBColors(backgroundColor)
                     .setObjectScale(objectScale)
                     .setResourceIds(array)
                     .setFinishListener(type -> {

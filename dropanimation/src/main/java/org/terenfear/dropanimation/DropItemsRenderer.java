@@ -106,10 +106,14 @@ public class DropItemsRenderer implements GLSurfaceView.Renderer {
     //==============================================================================================
     @Override
     public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
-        GLES20.glClearColor(mRendererData.getRColor(),
-                mRendererData.getGColor(),
-                mRendererData.getBColor(),
-                mRendererData.getAColor());
+        if (mRendererData.getAColor() == 0) {
+            GLES20.glClearColor(0, 0, 0, 0);
+        } else {
+            GLES20.glClearColor(mRendererData.getRColor(),
+                    mRendererData.getGColor(),
+                    mRendererData.getBColor(),
+                    mRendererData.getAColor());
+        }
 
         GLES20.glEnable(GL10.GL_BLEND);
         GLES20.glBlendFunc(GL10.GL_ONE, GL10.GL_ONE_MINUS_SRC_ALPHA);
@@ -151,10 +155,14 @@ public class DropItemsRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onDrawFrame(GL10 gl10) {
-        GLES20.glClearColor(mRendererData.getRColor(),
-                mRendererData.getGColor(),
-                mRendererData.getBColor(),
-                mRendererData.getAColor());
+        if (mRendererData.getAColor() == 0) {
+            GLES20.glClearColor(0, 0, 0, 0);
+        } else {
+            GLES20.glClearColor(mRendererData.getRColor(),
+                    mRendererData.getGColor(),
+                    mRendererData.getBColor(),
+                    mRendererData.getAColor());
+        }
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 
         // TODO: 21.12.2017 maybe move it to view
