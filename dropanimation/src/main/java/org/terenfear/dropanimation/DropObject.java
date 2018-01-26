@@ -30,7 +30,7 @@ public class DropObject {
         mTextureId = textureId;
         mDelayTime = delayTime;
         Random random = new Random();
-        float maxOffset = objWH / 8;
+        float maxOffset = objWH / 5;
         mOffsetY = -maxOffset + random.nextFloat() * maxOffset * 2 + initOffsetY;
         mOffsetZ = random.nextFloat() + 1;
         mAngle = random.nextFloat() * 360;

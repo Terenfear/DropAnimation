@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="DropItemsView">
+        <attr name="duration" format="integer"/>
+        <attr name="objectScale" format="float"/>
+        <attr name="rowLength" format="integer"/>
+        <attr name="backgroundColor" format="color"/>
+        <attr name="imageResArray" format="reference"/>
+        <attr name="startDropInVelocity" format="float"/>
+        <attr name="startDropOutVelocity" format="float"/>
+        <attr name="backgroundAlpha" format="float"/>
+        <attr name="backgroundRed" format="float"/>
+        <attr name="backgroundGreen" format="float"/>
+        <attr name="backgroundBlue" format="float"/>
+    </declare-styleable>
+</resources>

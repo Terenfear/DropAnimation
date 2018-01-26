@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="drawable_array">
+        <item>@drawable/ic_drop_1</item>
+        <item>@drawable/ic_drop_2</item>
+        <item>@drawable/ic_drop_3</item>
+        <item>@drawable/ic_drop_4</item>
+        <item>@drawable/ic_drop_5</item>
+        <item>@drawable/ic_drop_6</item>
+        <item>@drawable/ic_drop_7</item>
+    </array>
+</resources>

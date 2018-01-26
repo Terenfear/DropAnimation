@@ -3,7 +3,9 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/colorPrimary">
 
     <TextView
         android:layout_width="wrap_content"
@@ -15,7 +17,12 @@
     <org.terenfear.dropanimation.DropItemsView
         android:id="@+id/vDropItemSurface"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        app:duration="2400"
+        app:objectScale="1.9"
+        app:rowLength="20"
+        app:backgroundColor="@android:color/transparent"
+        app:imageResArray="@array/drawable_array"/>
 
     <LinearLayout
         android:layout_width="wrap_content"

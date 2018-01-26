@@ -93,9 +93,9 @@ public class DropItemsSupportDialogFragment extends DialogFragment {
                     .setStartDropOutVelocity(startDropOutVel)
                     .setDuration(duration)
                     .setRowLength(rowLength)
-                    .setARGBColors(backgroundColor)
+                    .setBackgroundColor(backgroundColor)
                     .setObjectScale(objectScale)
-                    .setResourceIds(array)
+                    .setImageResArray(array)
                     .setFinishListener(type -> {
                         mIsDropIn = !mIsDropIn;
                         startAnimation();

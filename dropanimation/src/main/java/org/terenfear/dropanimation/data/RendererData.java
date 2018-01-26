@@ -1,6 +1,10 @@
 package org.terenfear.dropanimation.data;
 
+import android.graphics.Color;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+
+import java.util.List;
 
 /**
  * Created with IntlliJ IDEA<br>
@@ -13,26 +17,46 @@ import android.support.annotation.Nullable;
  * ======================================================================================================================
  */
 public class RendererData {
-    private float mAlphaValue = 0f;
-    private float mRedValue = 0f;
-    private float mGreenValue = 0f;
-    private float mBlueValue = 0f;
+    public static final float DEFAULT_COLOR_VALUE = 0f;
+    public static final int DEFAULT_COLOR = Color.BLACK;
+    public static final int DEFAULT_DURATION = 2000;
+    public static final int DEFAULT_ROW_LENGTH = 10;
+    public static final float DEFAULT_OBJECT_SCALE = 1.9f;
+    public static final int DEFAULT_VELOCITY = 0;
+
+    private float mAlphaValue;
+    private float mRedValue;
+    private float mGreenValue;
+    private float mBlueValue;
 
     @Nullable
     private int[] mResourceIds;
 
-    private long mDuration = 2000;
-    private int mRowLength = 10;
-    private float mObjectScale = 1.9f;
-    private float mStartDropInVelocity = 0;
-    private float mStartDropOutVelocity = 0;
+    private long mDuration;
+    private int mRowLength;
+    private float mObjectScale;
+    private float mStartDropInVelocity;
+    private float mStartDropOutVelocity;
+
+    public RendererData() {
+       mAlphaValue = DEFAULT_COLOR_VALUE;
+       mRedValue = DEFAULT_COLOR_VALUE;
+       mGreenValue = DEFAULT_COLOR_VALUE;
+       mBlueValue = DEFAULT_COLOR_VALUE;
+
+       mDuration = DEFAULT_DURATION;
+       mRowLength = DEFAULT_ROW_LENGTH;
+       mObjectScale = DEFAULT_OBJECT_SCALE;
+       mStartDropInVelocity = DEFAULT_VELOCITY;
+       mStartDropOutVelocity = DEFAULT_VELOCITY;
+    }
 
     public synchronized float getAlphaValue() {
         return mAlphaValue;
     }
 
-    public synchronized void setAlphaColor(float alphaColor) {
-        mAlphaValue = alphaColor;
+    public synchronized void setAlphaValue(float alphaValue) {
+        mAlphaValue = alphaValue;
     }
 
     public synchronized float getRedValue() {
@@ -66,6 +90,17 @@ public class RendererData {
 
     public synchronized void setResourceIds(@Nullable int[] resourceIds) {
         mResourceIds = resourceIds;
+    }
+
+    public synchronized void setResourceIds(@Nullable List<Integer> resourceIds) {
+        if (resourceIds != null) {
+            mResourceIds = new int[resourceIds.size()];
+            Integer id;
+            for (int i = 0; i < resourceIds.size(); i++) {
+                id = resourceIds.get(i);
+                mResourceIds[i] = id;
+            }
+        }
     }
 
     public synchronized long getDuration() {
@@ -108,10 +143,23 @@ public class RendererData {
         mStartDropOutVelocity = startDropOutVelocity;
     }
 
-    public synchronized void setARGB(float a, float r, float g, float b) {
-        setAlphaColor(a);
+    public synchronized void setBackgroundColor(float a, float r, float g, float b) {
+        setAlphaValue(a);
         setRedValue(r);
         setGreenValue(g);
         setBlueValue(b);
+    }
+
+    public synchronized void setBackgroundColor(@NonNull String backgroundColor) {
+        int color = Color.parseColor(backgroundColor);
+        setBackgroundColor(color);
+    }
+
+    public synchronized void setBackgroundColor(int color) {
+        setAlphaValue(Color.alpha(color) / 255f);
+        setRedValue(Color.red(color) / 255f);
+        setGreenValue(Color.green(color) / 255f);
+        setBlueValue(Color.blue(color) / 255f);
+
     }
 }

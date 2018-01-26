@@ -1,15 +1,19 @@
 package org.terenfear.dropanimation;
 
 import android.content.Context;
-import android.graphics.Color;
+import android.content.res.TypedArray;
 import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
+import android.util.Log;
 
 import org.terenfear.dropanimation.data.RendererData;
 import org.terenfear.dropanimation.enums.AnimType;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -47,6 +51,39 @@ public class DropItemsView extends GLSurfaceView {
     public DropItemsView(Context context, AttributeSet attrs) {
         super(context, attrs);
         mRenderer = new DropItemsRenderer(getResources());
+
+        if (attrs != null) {
+            TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.DropItemsView);
+            mRendererData.setDuration(a.getInteger(R.styleable.DropItemsView_duration, RendererData.DEFAULT_DURATION));
+            mRendererData.setObjectScale(a.getFloat(R.styleable.DropItemsView_objectScale, RendererData.DEFAULT_OBJECT_SCALE));
+            mRendererData.setRowLength(a.getInteger(R.styleable.DropItemsView_rowLength, RendererData.DEFAULT_ROW_LENGTH));
+            mRendererData.setBackgroundColor(a.getColor(R.styleable.DropItemsView_backgroundColor, RendererData.DEFAULT_COLOR));
+            int arrayId = a.getResourceId(R.styleable.DropItemsView_imageResArray, 0);
+            if (arrayId != 0) {
+                TypedArray typedDrawableArray = getResources().obtainTypedArray(arrayId);
+                List<Integer> idList = new ArrayList<>();
+                int drawableId;
+                for (int i = 0; i < typedDrawableArray.length(); i++) {
+                    drawableId = typedDrawableArray.getResourceId(i, -1);
+                    if (drawableId != -1) {
+                        idList.add(drawableId);
+                    } else {
+                        Log.d(TAG, "DropItemsView: drawable array item #" + i + " is not defined or is not a resource");
+                    }
+                }
+                mRendererData.setResourceIds(idList);
+                typedDrawableArray.recycle();
+            }
+            mRendererData.setStartDropInVelocity(a.getFloat(R.styleable.DropItemsView_startDropInVelocity, RendererData.DEFAULT_VELOCITY));
+            mRendererData.setStartDropOutVelocity(a.getFloat(R.styleable.DropItemsView_startDropOutVelocity, RendererData.DEFAULT_VELOCITY));
+            mRendererData.setAlphaValue(a.getFloat(R.styleable.DropItemsView_backgroundAlpha, RendererData.DEFAULT_COLOR_VALUE));
+            mRendererData.setRedValue(a.getFloat(R.styleable.DropItemsView_backgroundRed, RendererData.DEFAULT_COLOR_VALUE));
+            mRendererData.setGreenValue(a.getFloat(R.styleable.DropItemsView_backgroundGreen, RendererData.DEFAULT_COLOR_VALUE));
+            mRendererData.setBlueValue(a.getFloat(R.styleable.DropItemsView_backgroundBlue, RendererData.DEFAULT_COLOR_VALUE));
+
+            mRenderer.setRendererData(mRendererData);
+            a.recycle();
+        }
         init();
     }
 
@@ -99,7 +136,7 @@ public class DropItemsView extends GLSurfaceView {
         return this;
     }
 
-    public DropItemsView setResourceIds(@DrawableRes int... resourceIds) {
+    public DropItemsView setImageResArray(@DrawableRes int... resourceIds) {
         mRendererData.setResourceIds(resourceIds);
         mRenderer.setRendererData(mRendererData);
         return this;
@@ -117,36 +154,36 @@ public class DropItemsView extends GLSurfaceView {
         return this;
     }
 
-    public DropItemsView setAColor(float aColor) {
-        mRendererData.setAlphaColor(aColor);
+    public DropItemsView setBackgroundAlphaValue(float aColor) {
+        mRendererData.setAlphaValue(aColor);
         mRenderer.setRendererData(mRendererData);
         requestRender();
         return this;
     }
 
-    public DropItemsView setRColor(float rColor) {
+    public DropItemsView setBackgroundRedValue(float rColor) {
         mRendererData.setRedValue(rColor);
         mRenderer.setRendererData(mRendererData);
         requestRender();
         return this;
     }
 
-    public DropItemsView setGColor(float gColor) {
+    public DropItemsView setBackgroundGreenValue(float gColor) {
         mRendererData.setGreenValue(gColor);
         mRenderer.setRendererData(mRendererData);
         requestRender();
         return this;
     }
 
-    public DropItemsView setBColor(float bColor) {
+    public DropItemsView setBackgroundBlueValue(float bColor) {
         mRendererData.setBlueValue(bColor);
         mRenderer.setRendererData(mRendererData);
         requestRender();
         return this;
     }
 
-    public DropItemsView setARGBColors(float a, float r, float g, float b) {
-        mRendererData.setAlphaColor(a);
+    public DropItemsView setBackgroundColor(float a, float r, float g, float b) {
+        mRendererData.setAlphaValue(a);
         mRendererData.setRedValue(r);
         mRendererData.setGreenValue(g);
         mRendererData.setBlueValue(b);
@@ -155,12 +192,15 @@ public class DropItemsView extends GLSurfaceView {
         return this;
     }
 
-    public DropItemsView setARGBColors(@NonNull String colorString) {
-        int color = Color.parseColor(colorString);
-        mRendererData.setAlphaColor(Color.alpha(color) / 255f);
-        mRendererData.setRedValue(Color.red(color) / 255f);
-        mRendererData.setGreenValue(Color.green(color) / 255f);
-        mRendererData.setBlueValue(Color.blue(color) / 255f);
+    public DropItemsView setBackgroundColor(@NonNull String colorString) {
+        mRendererData.setBackgroundColor(colorString);
+        mRenderer.setRendererData(mRendererData);
+        requestRender();
+        return this;
+    }
+
+    public DropItemsView setBackgroundColorInt(int color) {
+        mRendererData.setBackgroundColor(color);
         mRenderer.setRendererData(mRendererData);
         requestRender();
         return this;
